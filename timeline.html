@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Zaman Çizelgesi | Tevzi Panel</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="d-flex">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="p-3 text-white fw-bold fs-5 border-bottom">TEVZİ NFC</div>
+
+            <a href="tevzi.html">İş Atama</a>
+            <a href="timeline.html" class="active">Zaman Çizelgesi</a>
+            <a href="nfc-logs.html">NFC Logları</a>
+            <a href="personnel.html">Personel Yönetimi</a>
+
+            <div class="sidebar-title">Yönetim</div>
+            <a href="settings.html">Ayarlar</a>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content flex-grow-1 p-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold mb-0">Zaman Çizelgesi</h3>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body row g-3 align-items-end">
+
+                    <div class="col-md-3">
+                        <label class="form-label">Tarih</label>
+                        <input id="tlDate" type="date" class="form-control">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Vardiya</label>
+                        <select id="tlShift" class="form-select">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadTimeline()">Listele</button>
+                    </div>
+
+                    <div class="col-md-3 text-md-end">
+                        <button class="btn btn-outline-success" onclick="exportTimelineCsv()">
+                            CSV indir (Puantör)
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header fw-bold">Günlük Çizelge</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped m-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Personel</th>
+                                <th>İstasyon</th>
+                                <th>Vardiya</th>
+                                <th>Başlangıç</th>
+                                <th>Bitiş</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tlTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/timeline.js"></script>
+</body>
+
+</html>

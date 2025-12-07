@@ -1,0 +1,45 @@
+body {
+    background: #f5f6fa;
+}
+
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: #1f1f2e;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar a {
+    padding: 12px 20px;
+    color: #cfd2dc;
+    text-decoration: none;
+    border-bottom: 1px solid #2a2a3a;
+}
+
+.sidebar a:hover {
+    background: #29293d;
+    color: white;
+}
+
+.sidebar a.active {
+    background: #4c6ef5;
+    color: white;
+}
+
+.sidebar-title {
+    padding: 10px 20px;
+    font-size: 14px;
+    opacity: 0.5;
+}
+
+.content {
+    background: #fff;
+    min-height: 100vh;
+}
+
+.table td,
+.table th {
+    vertical-align: middle;
+}

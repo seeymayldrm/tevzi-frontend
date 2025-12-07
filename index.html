@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tevzi Panel Giriş</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+
+    <div class="login-box shadow p-4 bg-white rounded" style="width:380px">
+        <h4 class="text-center mb-3 fw-bold">Tevzi Giriş</h4>
+
+        <div id="error" class="alert alert-danger d-none"></div>
+
+        <input id="username" type="text" class="form-control mb-3" placeholder="Kullanıcı adı">
+        <input id="password" type="password" class="form-control mb-3" placeholder="Şifre">
+
+        <button class="btn btn-primary w-100" onclick="login()">Giriş Yap</button>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+
+</html>

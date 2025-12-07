@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tevzi İş Atama Paneli</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="d-flex">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="p-3 text-white fw-bold fs-5 border-bottom">TEVZİ NFC</div>
+
+            <a href="tevzi.html" class="active">İş Atama</a>
+            <a href="timeline.html">Zaman Çizelgesi</a>
+            <a href="nfc-logs.html">NFC Logları</a>
+            <a href="personnel.html">Personel Yönetimi</a>
+
+            <div class="sidebar-title">Yönetim</div>
+            <a href="settings.html">Ayarlar</a>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content flex-grow-1 p-4">
+
+            <h3 class="fw-bold mb-4">Tevzi İş Atama</h3>
+
+            <!-- KART OKUTAN PERSONELLER -->
+            <div class="card mb-4">
+                <div class="card-header">Kart Okutan Personeller</div>
+                <div class="card-body" id="scanList">
+                    Bugün kart okutan personel yok.
+                </div>
+            </div>
+
+            <!-- İŞ ATAMA FORMU -->
+            <div class="card mb-4">
+                <div class="card-header fw-bold">Tevzi İş Atama</div>
+
+                <div class="card-body row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label">Proje / İstasyon</label>
+                        <select id="stationSelect" class="form-select"></select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Başlangıç</label>
+                        <input id="startTime" type="time" class="form-control">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Bitiş</label>
+                        <input id="endTime" type="time" class="form-control">
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" onclick="assignJob()">İş Ata</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- GÜNÜN TEVZİLERİ -->
+            <div class="card">
+                <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+                    <span>Bugünkü İş Atamaları</span>
+
+                    <button class="btn btn-sm btn-outline-success" onclick="exportAssignmentsCsv()">
+                        CSV İndir
+                    </button>
+                </div>
+
+                <div class="card-body p-0">
+                    <table class="table table-striped m-0">
+                        <thead>
+                            <tr>
+                                <th>Personel</th>
+                                <th>Görev</th>
+                                <th>Başlangıç</th>
+                                <th>Bitiş</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignmentTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/tevzi.js"></script>
+</body>
+
+</html>
