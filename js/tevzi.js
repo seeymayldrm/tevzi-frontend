@@ -3,16 +3,33 @@
 let assignmentsCache = [];
 let stationsCache = [];
 let selectedPersonnelId = null;
+let assignedPersonnelIds = new Set(); // Bugün atanmış personeller
 
 window.addEventListener("load", async () => {
-    // Varsayılan saatler
     document.getElementById("startTime").value = "07:00";
     document.getElementById("endTime").value = "17:00";
 
+    startClock(); // canlı tarih saat
+
     await loadStations();
-    await loadScanList();
     await loadTodayAssignments();
+    await loadScanList();
 });
+
+/* -----------------------------------------
+   0) CANLI TARİH – SAAT
+------------------------------------------ */
+function startClock() {
+    const clock = document.getElementById("liveClock");
+    setInterval(() => {
+        const d = new Date();
+        const formatted =
+            d.toLocaleDateString("tr-TR") + " " +
+            d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+
+        clock.textContent = formatted;
+    }, 1000);
+}
 
 /* -----------------------------------------
    1) Kart Okutan Personelleri Listele
@@ -29,7 +46,6 @@ async function loadScanList() {
             return;
         }
 
-        // Aynı personelin tekrar tekrar görünmemesi için set
         const personSet = new Map();
 
         logs.forEach(l => {
@@ -39,9 +55,16 @@ async function loadScanList() {
 
         personSet.forEach(p => {
             const btn = document.createElement("button");
-            btn.className = "btn btn-light w-100 mb-2 text-start";
-            btn.textContent = p.fullName;
-            btn.onclick = () => selectPersonnel(p.id, btn);
+
+            // Eğer bugün bu personel zaten iş aldıysa gri + disable
+            if (assignedPersonnelIds.has(p.id)) {
+                btn.className = "btn btn-secondary w-100 mb-2 text-start disabled";
+                btn.textContent = p.fullName + " ✓ (Atandı)";
+            } else {
+                btn.className = "btn btn-light w-100 mb-2 text-start";
+                btn.textContent = p.fullName;
+                btn.onclick = () => selectPersonnel(p.id, btn);
+            }
 
             scanListDiv.appendChild(btn);
         });
@@ -53,12 +76,15 @@ async function loadScanList() {
 }
 
 function selectPersonnel(id, btn) {
+    if (assignedPersonnelIds.has(id)) return;
+
     selectedPersonnelId = id;
 
-    // Seçili butonu işaretle
     document.querySelectorAll("#scanList button").forEach(b => {
-        b.classList.remove("btn-primary");
-        b.classList.add("btn-light");
+        if (!b.classList.contains("disabled")) {
+            b.classList.remove("btn-primary");
+            b.classList.add("btn-light");
+        }
     });
 
     btn.classList.remove("btn-light");
@@ -95,7 +121,7 @@ function todayISO() {
 }
 
 /* -----------------------------------------
-   3) Bugünkü Atamaları Yükle
+   3) Bugünkü Atamaları Yükle + işaretleme
 ------------------------------------------ */
 async function loadTodayAssignments() {
     try {
@@ -103,6 +129,7 @@ async function loadTodayAssignments() {
         const data = await api(`/assignments?date=${date}`);
 
         assignmentsCache = data;
+        assignedPersonnelIds = new Set(data.map(a => a.personnelId));
 
         const tbody = document.getElementById("assignmentTable");
         tbody.innerHTML = "";
@@ -114,6 +141,7 @@ async function loadTodayAssignments() {
                         Bugün için atanmış iş yok.
                     </td>
                 </tr>`;
+            await loadScanList();
             return;
         }
 
@@ -132,6 +160,8 @@ async function loadTodayAssignments() {
             tbody.appendChild(tr);
         });
 
+        await loadScanList();
+
     } catch (err) {
         alert("İş atamaları alınamadı: " + err.message);
     }
@@ -147,12 +177,14 @@ async function assignJob() {
             return;
         }
 
-        const stationId = Number(document.getElementById("stationSelect").value);
-        const start = document.getElementById("startTime").value;
-        const end = document.getElementById("endTime").value;
+        if (assignedPersonnelIds.has(selectedPersonnelId)) {
+            alert("Bu personel bugün zaten iş aldı!");
+            return;
+        }
 
-        // Shift'i backend’den okuyacağız (gündüz shift genelde id=1)
-        const shiftId = 1;
+        const stationId = Number(document.getElementById("stationSelect").value);
+
+        const shiftId = 1; // geçici
 
         const body = {
             date: todayISO(),
@@ -162,9 +194,11 @@ async function assignJob() {
         };
 
         await api("/assignments", "POST", body);
-        await loadTodayAssignments();
 
         alert("İş başarıyla atandı.");
+
+        await loadTodayAssignments();
+        await loadScanList();
 
     } catch (err) {
         alert("İş ataması yapılamadı: " + err.message);
@@ -186,7 +220,7 @@ async function deleteAssignment(id) {
 }
 
 /* -----------------------------------------
-   6) CSV Export (UTF-8 BOM + Türkçe destekli)
+   6) CSV Export (UTF-8 BOM)
 ------------------------------------------ */
 function exportAssignmentsCsv() {
     if (!assignmentsCache.length) {
