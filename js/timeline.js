@@ -40,29 +40,69 @@ async function loadTimeline() {
             return;
         }
 
+        // 1) Atamaları getir
         let url = `/assignments?date=${date}`;
         if (shiftId) url += `&shiftId=${shiftId}`;
+        const assignments = await api(url);
 
-        const data = await api(url);
-        timelineCache = data;
+        // 2) NFC loglarını getir
+        const logs = await api(`/nfc/logs?date=${date}`);
 
+        // 3) Her personel için IN/OUT saatlerini hesapla
+        const scanMap = {};
+
+        logs.forEach(l => {
+            if (!l.personnel) return;
+
+            const pid = l.personnel.id;
+
+            const time = new Date(l.scannedAt).toLocaleTimeString("tr-TR", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            if (!scanMap[pid]) {
+                scanMap[pid] = {
+                    firstIn: "-",
+                    lastOut: "-"
+                };
+            }
+
+            if (l.type === "IN") {
+                if (scanMap[pid].firstIn === "-" || time < scanMap[pid].firstIn) {
+                    scanMap[pid].firstIn = time;
+                }
+            }
+
+            if (l.type === "OUT") {
+                if (scanMap[pid].lastOut === "-" || time > scanMap[pid].lastOut) {
+                    scanMap[pid].lastOut = time;
+                }
+            }
+        });
+
+        // 4) Tabloyu yazdır
+        timelineCache = assignments;
         const tbody = document.getElementById("tlTable");
         tbody.innerHTML = "";
 
-        if (!data.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3">Kayıt yok.</td></tr>`;
+        if (!assignments.length) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-3">Kayıt yok.</td></tr>`;
             return;
         }
 
-        data.forEach(a => {
+        assignments.forEach(a => {
+            const pid = a.personnel?.id;
+            const scan = scanMap[pid] || { firstIn: "-", lastOut: "-" };
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${date}</td>
                 <td>${a.personnel?.fullName || "-"}</td>
                 <td>${a.station?.name || "-"}</td>
                 <td>${a.shift?.name || "-"}</td>
-                <td>${a.shift?.startTime || "-"}</td>
-                <td>${a.shift?.endTime || "-"}</td>
+                <td>${scan.firstIn}</td>
+                <td>${scan.lastOut}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -80,28 +120,83 @@ function exportTimelineCsv() {
     }
 
     const date = document.getElementById("tlDate").value;
+
     const rows = [];
-    rows.push(["Tarih", "Personel", "İstasyon", "Vardiya", "Başlangıç", "Bitiş"]);
+    rows.push([
+        "Tarih",
+        "Personel",
+        "İstasyon",
+        "Vardiya",
+        "İlk Giriş (IN)",
+        "Son Çıkış (OUT)"
+    ]);
 
-    timelineCache.forEach(a => {
-        rows.push([
-            date,
-            a.personnel?.fullName || "",
-            a.station?.name || "",
-            a.shift?.name || "",
-            a.shift?.startTime || "",
-            a.shift?.endTime || ""
-        ]);
+    // CSV doldurma için IN/OUT hesaplamayı tekrar yapıyoruz:
+    // Çünkü timelineCache sadece assignment veriyor.
+    // IN/OUT zaten tabloya yazılmıştı ama CSV için de aynı şekilde hesaplamak zorundayız.
+
+    // CBC (çek—birleş—çıkartma)
+    // logs'u burada tekrar çekmek yerine loadTimeline() içinde saklayabilirdik 
+    // ama basitlik açısından tekrar çekelim.
+
+    api(`/nfc/logs?date=${date}`).then(logs => {
+        const scanMap = {};
+
+        logs.forEach(l => {
+            if (!l.personnel) return;
+
+            const pid = l.personnel.id;
+            const time = new Date(l.scannedAt).toLocaleTimeString("tr-TR", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            if (!scanMap[pid]) {
+                scanMap[pid] = { firstIn: "-", lastOut: "-" };
+            }
+
+            if (l.type === "IN") {
+                if (scanMap[pid].firstIn === "-" || time < scanMap[pid].firstIn) {
+                    scanMap[pid].firstIn = time;
+                }
+            }
+
+            if (l.type === "OUT") {
+                if (scanMap[pid].lastOut === "-" || time > scanMap[pid].lastOut) {
+                    scanMap[pid].lastOut = time;
+                }
+            }
+        });
+
+        timelineCache.forEach(a => {
+            const pid = a.personnel?.id;
+            const scan = scanMap[pid] || { firstIn: "-", lastOut: "-" };
+
+            rows.push([
+                date,
+                a.personnel?.fullName || "",
+                a.station?.name || "",
+                a.shift?.name || "",
+                scan.firstIn,
+                scan.lastOut
+            ]);
+        });
+
+        // CSV oluşturma (TÜRKÇE KARAKTER DESTEKLİ — UTF-8 BOM)
+        const csv = rows
+            .map(r => r.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";"))
+            .join("\r\n");
+
+        const BOM = "\uFEFF"; // UTF-8 BOM
+        const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `puantaj_${date}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
-
-    const csv = rows.map(r => r.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";")).join("\r\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `puantaj_${date}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
