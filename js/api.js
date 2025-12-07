@@ -1,8 +1,10 @@
 // js/api.js
 
-// Lokal geliştirme ve Railway prod arasında otomatik seçim
-const API_BASE = "https://tevzi-backend-production.up.railway.app/api";
-
+// Lokal geliştirme (localhost) ve Railway prod arasında otomatik seçim
+const API_BASE =
+    window.location.hostname === "localhost"
+        ? "http://localhost:3000/api"
+        : "https://tevzi-backend-production.up.railway.app/api";
 
 async function api(path, method = "GET", data = null) {
     const token = localStorage.getItem("token");

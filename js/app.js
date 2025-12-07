@@ -1,4 +1,5 @@
-// Sayfa yüklenince token yoksa login'e at
+// js/app.js
+
 if (!localStorage.getItem("token")) {
     window.location.href = "index.html";
 }
