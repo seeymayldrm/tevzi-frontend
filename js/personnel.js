@@ -1,65 +1,70 @@
-// js/personnel.js
-
-let personnelCache = [];
-
-window.addEventListener("load", () => {
-    loadPersonnel();
-});
-
 async function loadPersonnel() {
-    try {
-        const filter = document.getElementById("pFilter").value;
-        let url = "/personnel";
-        if (filter) url += `?active=${filter}`;
+    const name = document.getElementById("filterName")?.value.trim() || "";
+    const dept = document.getElementById("filterDept")?.value.trim() || "";
+    const status = document.getElementById("filterStatus")?.value || "";
 
-        const data = await api(url);
-        personnelCache = data;
+    // backend sadece ?active=true|false destekliyor
+    let query = "";
+    if (status !== "") query = `?active=${status}`;
 
-        const tbody = document.getElementById("personnelTable");
-        tbody.innerHTML = "";
+    const data = await api("/personnel" + query);
 
-        if (!data.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3">Kayıt yok.</td></tr>`;
-            return;
-        }
+    const tbody = document.getElementById("personnelTable");
+    tbody.innerHTML = "";
 
-        data.forEach(p => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${p.fullName}</td>
-                <td>${p.department || "-"}</td>
-                <td>${p.title || "-"}</td>
-                <td>${p.isActive ? "Aktif" : "Pasif"}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+    // Filtreyi FE tarafında tamamlıyoruz
+    const filtered = data.filter(p =>
+        p.fullName.toLowerCase().includes(name.toLowerCase()) &&
+        p.department?.toLowerCase().includes(dept.toLowerCase())
+    );
 
-    } catch (err) {
-        console.error(err);
-        alert("Personel listesi alınamadı: " + err.message);
-    }
+    filtered.forEach(p => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${p.fullName}</td>
+            <td>${p.department || "-"}</td>
+            <td>${p.title || "-"}</td>
+            <td>${p.isActive ? "Aktif" : "Pasif"}</td>
+            <td>
+                <button class="btn btn-sm btn-warning me-1"
+                    onclick="openEditModal(${p.id}, '${p.fullName}', '${p.department || ""}', '${p.title || ""}', ${p.isActive})">
+                    Düzenle
+                </button>
+
+                <button class="btn btn-sm btn-danger"
+                    onclick="deletePersonnel(${p.id})">
+                    Sil
+                </button>
+            </td>
+        </tr>
+        `;
+    });
 }
 
-async function createPersonnel() {
-    try {
-        const fullName = document.getElementById("pFullName").value.trim();
-        const department = document.getElementById("pDept").value.trim();
-        const title = document.getElementById("pTitle").value.trim();
+function openEditModal(id, fullName, dept, title, isActive) {
+    const newName = prompt("Ad Soyad", fullName);
+    if (!newName) return;
 
-        if (!fullName) {
-            alert("Ad soyad zorunlu.");
-            return;
-        }
+    const newDept = prompt("Bölüm", dept);
+    const newTitle = prompt("Ünvan", title);
 
-        await api("/personnel", "POST", { fullName, department, title });
+    const newStatus = confirm("Personel aktif olsun mu?");
 
-        document.getElementById("pFullName").value = "";
-        document.getElementById("pDept").value = "";
-        document.getElementById("pTitle").value = "";
-
-        await loadPersonnel();
-    } catch (err) {
-        console.error(err);
-        alert("Personel eklenemedi: " + err.message);
-    }
+    api(`/personnel/${id}`, "PUT", {
+        fullName: newName,
+        department: newDept,
+        title: newTitle,
+        isActive: newStatus
+    }).then(loadPersonnel)
+        .catch(err => alert("Güncelleme hatası: " + err.message));
 }
+
+function deletePersonnel(id) {
+    if (!confirm("Bu personeli silmek istiyor musun?")) return;
+
+    api(`/personnel/${id}`, "DELETE")
+        .then(loadPersonnel)
+        .catch(err => alert("Silme hatası: " + err.message));
+}
+
+window.onload = loadPersonnel;

@@ -11,6 +11,7 @@
 <body>
     <div class="d-flex">
 
+        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="p-3 text-white fw-bold fs-5 border-bottom">TEVZİ NFC</div>
 
@@ -23,37 +24,40 @@
             <a href="settings.html">Ayarlar</a>
         </div>
 
+        <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
 
             <h3 class="fw-bold mb-4">Personel Yönetimi</h3>
 
+            <!-- FİLTRE BÖLÜMÜ -->
             <div class="card mb-3">
                 <div class="card-body row g-3">
                     <div class="col-md-4">
-                        <input id="pFullName" type="text" class="form-control" placeholder="Ad Soyad">
+                        <input id="filterName" type="text" class="form-control" placeholder="Ad Soyad">
                     </div>
+
                     <div class="col-md-3">
-                        <input id="pDept" type="text" class="form-control" placeholder="Bölüm">
+                        <input id="filterDept" type="text" class="form-control" placeholder="Bölüm">
                     </div>
+
                     <div class="col-md-3">
-                        <input id="pTitle" type="text" class="form-control" placeholder="Görev/Ünvan">
+                        <select id="filterStatus" class="form-select">
+                            <option value="">Durum (Tümü)</option>
+                            <option value="true">Aktif</option>
+                            <option value="false">Pasif</option>
+                        </select>
                     </div>
+
                     <div class="col-md-2">
-                        <button class="btn btn-primary w-100" onclick="createPersonnel()">Ekle</button>
+                        <button class="btn btn-primary w-100" onclick="loadPersonnel()">Filtrele</button>
                     </div>
                 </div>
             </div>
 
+            <!-- TABLO -->
             <div class="card">
-                <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                    <span>Personel Listesi</span>
-                    <select id="pFilter" class="form-select form-select-sm" style="width:180px"
-                        onchange="loadPersonnel()">
-                        <option value="">Tümü</option>
-                        <option value="true">Aktif</option>
-                        <option value="false">Pasif</option>
-                    </select>
-                </div>
+                <div class="card-header fw-bold">Personel Listesi</div>
+
                 <div class="card-body p-0">
                     <table class="table table-striped m-0">
                         <thead>
@@ -62,6 +66,7 @@
                                 <th>Bölüm</th>
                                 <th>Ünvan</th>
                                 <th>Durum</th>
+                                <th style="width:160px">İşlem</th>
                             </tr>
                         </thead>
                         <tbody id="personnelTable"></tbody>
