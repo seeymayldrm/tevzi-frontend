@@ -2,23 +2,51 @@
 
 let logsCache = [];
 
+/* ---------------------------------------------
+   🇹🇷 TR BUGÜN TARİHİ
+--------------------------------------------- */
+function getTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+/* ---------------------------------------------
+   🇹🇷 TR RAW LOG SAATİ (UTC DÖNÜŞÜM YOK)
+   "2025-12-09T01:08:40.000Z" → "09.12.2025 01:08"
+--------------------------------------------- */
+function formatTRDateTime(raw) {
+    const [datePart, timePart] = raw.split("T"); // ["2025-12-09", "01:08:40.000Z"]
+    const [hour, minute] = timePart.split(":"); // ["01","08","40.000Z"]
+    const [y, m, d] = datePart.split("-");      // ["2025","12","09"]
+
+    return `${d}.${m}.${y} ${hour}:${minute}`;
+}
+
+/* ---------------------------------------------
+   SAYFA LOAD
+--------------------------------------------- */
 window.addEventListener("load", () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayLocal();   // 🔥 Artık TR bugün
     document.getElementById("logStart").value = today;
     document.getElementById("logEnd").value = today;
-    loadLogs(); // sayfa açılır açılmaz bugünü yükle
+    loadLogs();
 });
 
+/* ---------------------------------------------
+   LOG YÜKLEME
+--------------------------------------------- */
 async function loadLogs() {
     try {
         const start = document.getElementById("logStart").value;
-        // şimdilik end'i kullanmıyoruz, tek gün üzerinden gidiyoruz
+
         if (!start) {
             alert("Lütfen tarih seç.");
             return;
         }
 
-        // Backend'deki endpoint: /nfc/logs?date=YYYY-MM-DD
         const data = await api(`/nfc/logs?date=${start}`);
         logsCache = data;
 
@@ -33,7 +61,7 @@ async function loadLogs() {
         data.forEach((l) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${new Date(l.scannedAt).toLocaleString("tr-TR")}</td>
+                <td>${formatTRDateTime(l.scannedAt)}</td>  <!-- 🔥 DOĞRU SAAT -->
                 <td>${l.uid}</td>
                 <td>${l.type}</td>
                 <td>${l.personnel?.fullName || "-"}</td>
@@ -42,12 +70,16 @@ async function loadLogs() {
             `;
             tbody.appendChild(tr);
         });
+
     } catch (err) {
         console.error(err);
         alert("Loglar alınamadı: " + err.message);
     }
 }
 
+/* ---------------------------------------------
+   CSV EXPORT — TR RAW TARİH/SAAT
+--------------------------------------------- */
 function exportLogsCsv() {
     if (!logsCache.length) {
         alert("İndirilecek log yok.");
@@ -59,7 +91,7 @@ function exportLogsCsv() {
 
     logsCache.forEach((l) => {
         rows.push([
-            new Date(l.scannedAt).toLocaleString("tr-TR"),
+            formatTRDateTime(l.scannedAt),   // 🔥 DOĞRU SAAT
             l.uid,
             l.type,
             l.personnel?.fullName || "",
@@ -70,11 +102,7 @@ function exportLogsCsv() {
 
     const csv = rows
         .map((r) =>
-            r
-                .map((v) =>
-                    `"${(v ?? "").toString().replace(/"/g, '""')}"`
-                )
-                .join(";")
+            r.map((v) => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";")
         )
         .join("\r\n");
 
