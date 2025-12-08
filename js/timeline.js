@@ -3,7 +3,9 @@
 let timelineCache = [];
 let shiftsCache = [];
 
-// >>> BURASI YENİ — TÜRKİYE SAATİNE GÖRE BUGÜN TARİHİ <<<
+/* ---------------------------------------------
+   🇹🇷 TR BUGÜN TARİHİ
+--------------------------------------------- */
 function getTodayLocal() {
     const now = new Date();
     const year = now.getFullYear();
@@ -12,14 +14,28 @@ function getTodayLocal() {
     return `${year}-${month}-${day}`;
 }
 
+/* ---------------------------------------------
+   🇹🇷 TR SAATİNİ JSON TARİHİNDEN RAW ÇEK (UTC KAYMASIZ!)
+   "2025-12-09T01:08:40.000Z" → "01:08"
+--------------------------------------------- */
+function extractTimeFromTR(dateString) {
+    const timePart = dateString.split("T")[1];     // "01:08:40.000Z"
+    const [hour, minute] = timePart.split(":");    // ["01","08","40.000Z"]
+    return `${hour}:${minute}`;                    // "01:08"
+}
+
+/* ---------------------------------------------
+   LOAD
+--------------------------------------------- */
 window.addEventListener("load", async () => {
     document.getElementById("tlDate").value = getTodayLocal();
-
     await loadShifts();
     await loadTimeline();
 });
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+/* ---------------------------------------------
+   Vardiya Yükleme
+--------------------------------------------- */
 async function loadShifts() {
     try {
         const data = await api("/shifts");
@@ -33,12 +49,16 @@ async function loadShifts() {
             opt.textContent = `${s.name} (${s.code})`;
             sel.appendChild(opt);
         });
+
     } catch (err) {
         console.error(err);
         alert("Vardiya listesi alınamadı: " + err.message);
     }
 }
 
+/* ---------------------------------------------
+   Timeline Yükleme
+--------------------------------------------- */
 async function loadTimeline() {
     try {
         const date = document.getElementById("tlDate").value;
@@ -49,26 +69,22 @@ async function loadTimeline() {
             return;
         }
 
-        // 1) Atamaları getir
+        // 1) Assignment getir
         let url = `/assignments?date=${date}`;
         if (shiftId) url += `&shiftId=${shiftId}`;
         const assignments = await api(url);
 
-        // 2) NFC loglarını getir
+        // 2) Logları getir
         const logs = await api(`/nfc/logs?date=${date}`);
 
-        // 3) Her personel için IN/OUT saatlerini hesapla
+        // 3) IN/OUT hesaplama (TR raw saatine göre)
         const scanMap = {};
 
         logs.forEach(l => {
             if (!l.personnel) return;
 
             const pid = l.personnel.id;
-
-            const time = new Date(l.scannedAt).toLocaleTimeString("tr-TR", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+            const time = extractTimeFromTR(l.scannedAt); // 🔥 doğru saat
 
             if (!scanMap[pid]) {
                 scanMap[pid] = {
@@ -90,7 +106,7 @@ async function loadTimeline() {
             }
         });
 
-        // 4) Tabloyu yazdır
+        // 4) Tablo yazdır
         timelineCache = assignments;
         const tbody = document.getElementById("tlTable");
         tbody.innerHTML = "";
@@ -122,6 +138,9 @@ async function loadTimeline() {
     }
 }
 
+/* ---------------------------------------------
+   CSV EXPORT (TR Saatine Göre Raw)
+--------------------------------------------- */
 function exportTimelineCsv() {
     if (!timelineCache.length) {
         alert("İndirilecek kayıt yok.");
@@ -145,7 +164,6 @@ function exportTimelineCsv() {
     ]);
 
     api(`/nfc/logs?date=${date}`).then(logs => {
-
         const scanMap = {};
 
         logs.forEach(l => {
@@ -153,19 +171,12 @@ function exportTimelineCsv() {
 
             const pid = l.personnel.id;
 
-            const dt = new Date(l.scannedAt);
-            const tarih = dt.toLocaleDateString("tr-TR");
-            const saat = dt.toLocaleTimeString("tr-TR", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-            const tam = `${tarih} ${saat}`;
+            const tarih = l.scannedAt.split("T")[0].split("-").reverse().join(".");
+            const saat = extractTimeFromTR(l.scannedAt);
+            const tam = `${tarih} ${saat}`; // 09.12.2025 01:08
 
             if (!scanMap[pid]) {
-                scanMap[pid] = {
-                    firstIn: null,
-                    lastOut: null
-                };
+                scanMap[pid] = { firstIn: null, lastOut: null };
             }
 
             if (l.type === "IN") {
@@ -191,10 +202,7 @@ function exportTimelineCsv() {
             const lastName = parts.pop() || "";
             const firstName = parts.join(" ") || "";
 
-            const scan = scanMap[pid] || {
-                firstIn: "",
-                lastOut: ""
-            };
+            const scan = scanMap[pid] || { firstIn: "", lastOut: "" };
 
             rows.push([
                 index++,
