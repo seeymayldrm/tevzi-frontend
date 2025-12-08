@@ -3,13 +3,22 @@
 let timelineCache = [];
 let shiftsCache = [];
 
+// >>> BURASI YENİ — TÜRKİYE SAATİNE GÖRE BUGÜN TARİHİ <<<
+function getTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
 window.addEventListener("load", async () => {
-    const d = new Date().toISOString().split("T")[0];
-    document.getElementById("tlDate").value = d;
+    document.getElementById("tlDate").value = getTodayLocal();
 
     await loadShifts();
     await loadTimeline();
 });
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 async function loadShifts() {
     try {
@@ -123,71 +132,89 @@ function exportTimelineCsv() {
 
     const rows = [];
     rows.push([
-        "Tarih",
-        "Personel",
-        "İstasyon",
-        "Vardiya",
-        "İlk Giriş (IN)",
-        "Son Çıkış (OUT)"
+        "Sıra No",
+        "Adı",
+        "Soyadı",
+        "Görev Tanımı",
+        "Çalışılan Proje",
+        "Yapılan İşin Tanımı",
+        "Başlangıç Gün Saati",
+        "Bitiş Saati",
+        "Yevmiye",
+        "Götürü"
     ]);
 
-    // CSV doldurma için IN/OUT hesaplamayı tekrar yapıyoruz:
-    // Çünkü timelineCache sadece assignment veriyor.
-    // IN/OUT zaten tabloya yazılmıştı ama CSV için de aynı şekilde hesaplamak zorundayız.
-
-    // CBC (çek—birleş—çıkartma)
-    // logs'u burada tekrar çekmek yerine loadTimeline() içinde saklayabilirdik 
-    // ama basitlik açısından tekrar çekelim.
-
     api(`/nfc/logs?date=${date}`).then(logs => {
+
         const scanMap = {};
 
         logs.forEach(l => {
             if (!l.personnel) return;
 
             const pid = l.personnel.id;
-            const time = new Date(l.scannedAt).toLocaleTimeString("tr-TR", {
+
+            const dt = new Date(l.scannedAt);
+            const tarih = dt.toLocaleDateString("tr-TR");
+            const saat = dt.toLocaleTimeString("tr-TR", {
                 hour: "2-digit",
                 minute: "2-digit"
             });
+            const tam = `${tarih} ${saat}`;
 
             if (!scanMap[pid]) {
-                scanMap[pid] = { firstIn: "-", lastOut: "-" };
+                scanMap[pid] = {
+                    firstIn: null,
+                    lastOut: null
+                };
             }
 
             if (l.type === "IN") {
-                if (scanMap[pid].firstIn === "-" || time < scanMap[pid].firstIn) {
-                    scanMap[pid].firstIn = time;
+                if (!scanMap[pid].firstIn || tam < scanMap[pid].firstIn) {
+                    scanMap[pid].firstIn = tam;
                 }
             }
 
             if (l.type === "OUT") {
-                if (scanMap[pid].lastOut === "-" || time > scanMap[pid].lastOut) {
-                    scanMap[pid].lastOut = time;
+                if (!scanMap[pid].lastOut || tam > scanMap[pid].lastOut) {
+                    scanMap[pid].lastOut = tam;
                 }
             }
         });
 
+        let index = 1;
+
         timelineCache.forEach(a => {
             const pid = a.personnel?.id;
-            const scan = scanMap[pid] || { firstIn: "-", lastOut: "-" };
+            const fullName = a.personnel?.fullName || "";
+
+            const parts = fullName.trim().split(" ");
+            const lastName = parts.pop() || "";
+            const firstName = parts.join(" ") || "";
+
+            const scan = scanMap[pid] || {
+                firstIn: "",
+                lastOut: ""
+            };
 
             rows.push([
-                date,
-                a.personnel?.fullName || "",
+                index++,
+                firstName,
+                lastName,
+                a.personnel?.department || "",
+                "",
                 a.station?.name || "",
-                a.shift?.name || "",
-                scan.firstIn,
-                scan.lastOut
+                scan.firstIn || "",
+                scan.lastOut || "",
+                "",
+                ""
             ]);
         });
 
-        // CSV oluşturma (TÜRKÇE KARAKTER DESTEKLİ — UTF-8 BOM)
         const csv = rows
             .map(r => r.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";"))
             .join("\r\n");
 
-        const BOM = "\uFEFF"; // UTF-8 BOM
+        const BOM = "\uFEFF";
         const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
 
         const url = URL.createObjectURL(blob);
