@@ -16,24 +16,20 @@ window.addEventListener("load", async () => {
     await loadScanList();
 });
 
-/* ---------------------  
-   TR TARİHİ
----------------------- */
+/* -----------------------------------------
+   BUGÜN (TRLİ OLMASINA GEREK YOK)
+----------------------------------------- */
 function todayISO() {
-    const tr = new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" });
-    const d = new Date(tr);
-
+    const d = new Date(); // TR'deki saat backend'de kaydediliyor
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-
     return `${year}-${month}-${day}`;
 }
 
-
-/* ---------------------  
+/* -----------------------------------------
    CANLI SAAT
----------------------- */
+----------------------------------------- */
 function startClock() {
     const clock = document.getElementById("liveClock");
     setInterval(() => {
@@ -41,16 +37,19 @@ function startClock() {
         clock.textContent =
             d.toLocaleDateString("tr-TR") +
             " " +
-            d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+            d.toLocaleTimeString("tr-TR", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
     }, 1000);
 }
 
-/* ---------------------  
-   1) KART OKUTANLAR
----------------------- */
+/* -----------------------------------------
+   1) BUGÜN KART OKUTANLAR
+----------------------------------------- */
 async function loadScanList() {
     try {
-        const logs = await api("/nfc/today");
+        const logs = await api("/nfc/today"); // backend TR saatine göre getiriyor
         const div = document.getElementById("scanList");
         div.innerHTML = "";
 
@@ -70,12 +69,9 @@ async function loadScanList() {
 
             map.set(l.personnel.id, {
                 ...l.personnel,
-                entryTime: entry
-                    ? new Date(entry.scannedAt).toLocaleTimeString("tr-TR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    })
-                    : "-"
+
+                // 🔥 DB'deki TR tarihinin saat kısmını direkt alıyoruz
+                entryTime: entry ? entry.scannedAt.slice(11, 16) : "-"
             });
         });
 
@@ -94,6 +90,7 @@ async function loadScanList() {
 
             div.appendChild(btn);
         });
+
     } catch (err) {
         alert("Kart okuma listesi alınamadı.");
     }
@@ -101,18 +98,20 @@ async function loadScanList() {
 
 function selectPersonnel(id, btn) {
     selectedPersonnelId = id;
+
     document.querySelectorAll("#scanList button").forEach(b => {
         if (!b.classList.contains("disabled")) {
             b.classList.remove("btn-primary");
             b.classList.add("btn-light");
         }
     });
+
     btn.classList.add("btn-primary");
 }
 
-/* ---------------------  
-   2) İSTASYONLAR 
----------------------- */
+/* -----------------------------------------
+   2) İSTASYONLAR
+----------------------------------------- */
 async function loadStations() {
     try {
         const stations = await api("/stations");
@@ -127,14 +126,15 @@ async function loadStations() {
             opt.textContent = `${s.name} (${s.code})`;
             select.appendChild(opt);
         });
+
     } catch (err) {
         alert("İstasyon listesi alınamadı!");
     }
 }
 
-/* ---------------------  
+/* -----------------------------------------
    3) BUGÜNKÜ ATAMALAR
----------------------- */
+----------------------------------------- */
 async function loadTodayAssignments() {
     try {
         const date = todayISO();
@@ -147,18 +147,20 @@ async function loadTodayAssignments() {
         tbody.innerHTML = "";
 
         if (!data.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>`;
+            tbody.innerHTML = `
+                <tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>
+            `;
             await loadScanList();
             return;
         }
 
         data.forEach(a => {
             const override = window.localAssignmentOverride[a.id] || {};
-
             const start = override.start || a.shift?.startTime || "-";
             const end = override.end || a.shift?.endTime || "-";
 
             const tr = document.createElement("tr");
+
             tr.innerHTML = `
                 <td>${a.personnel?.fullName || "-"}</td>
                 <td>${a.station?.name || "-"}</td>
@@ -167,19 +169,22 @@ async function loadTodayAssignments() {
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-danger"
                         onclick="deleteAssignment(${a.id})">Sil</button>
-                </td>`;
+                </td>
+            `;
+
             tbody.appendChild(tr);
         });
 
         await loadScanList();
+
     } catch (err) {
         alert("İş atamaları alınamadı.");
     }
 }
 
-/* ---------------------  
+/* -----------------------------------------
    4) İŞ ATA
----------------------- */
+----------------------------------------- */
 async function assignJob() {
     try {
         if (!selectedPersonnelId) {
@@ -207,11 +212,7 @@ async function assignJob() {
 
         const saved = await api("/assignments", "POST", body);
 
-        // FRONTEND SAAT OVERRIDE
-        window.localAssignmentOverride[saved.id] = {
-            start,
-            end
-        };
+        window.localAssignmentOverride[saved.id] = { start, end };
 
         await loadTodayAssignments();
         await loadScanList();
@@ -223,9 +224,9 @@ async function assignJob() {
     }
 }
 
-/* ---------------------  
-   5) SİL
----------------------- */
+/* -----------------------------------------
+   5) ATAMA SİL
+----------------------------------------- */
 async function deleteAssignment(id) {
     if (!confirm("Silinsin mi?")) return;
 
@@ -235,4 +236,3 @@ async function deleteAssignment(id) {
 
     await loadTodayAssignments();
 }
-
