@@ -3,9 +3,6 @@ let stationsCache = [];
 let selectedPersonnelId = null;
 let assignedPersonnelIds = new Set();
 
-// FRONTEND ÜSTÜNDE SAAT OVERRIDE
-window.localAssignmentOverride = {};
-
 window.addEventListener("load", async () => {
     document.getElementById("startTime").value = "07:00";
     document.getElementById("endTime").value = "17:00";
@@ -17,10 +14,10 @@ window.addEventListener("load", async () => {
 });
 
 /* -----------------------------------------
-   BUGÜN (TRLİ OLMASINA GEREK YOK)
+   BUGÜN
 ----------------------------------------- */
 function todayISO() {
-    const d = new Date(); // TR'deki saat backend'de kaydediliyor
+    const d = new Date();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -35,12 +32,8 @@ function startClock() {
     setInterval(() => {
         const d = new Date();
         clock.textContent =
-            d.toLocaleDateString("tr-TR") +
-            " " +
-            d.toLocaleTimeString("tr-TR", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+            d.toLocaleDateString("tr-TR") + " " +
+            d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
     }, 1000);
 }
 
@@ -49,7 +42,7 @@ function startClock() {
 ----------------------------------------- */
 async function loadScanList() {
     try {
-        const logs = await api("/nfc/today"); // backend TR saatine göre getiriyor
+        const logs = await api("/nfc/today");
         const div = document.getElementById("scanList");
         div.innerHTML = "";
 
@@ -63,14 +56,12 @@ async function loadScanList() {
         logs.forEach(l => {
             if (!l.personnel) return;
 
-            const entry = logs.find(
-                x => x.personnelId === l.personnelId && x.type === "IN"
+            const entry = logs.find(x =>
+                x.personnelId === l.personnelId && x.type === "IN"
             );
 
             map.set(l.personnel.id, {
                 ...l.personnel,
-
-                // 🔥 DB'deki TR tarihinin saat kısmını direkt alıyoruz
                 entryTime: entry ? entry.scannedAt.slice(11, 16) : "-"
             });
         });
@@ -147,25 +138,19 @@ async function loadTodayAssignments() {
         tbody.innerHTML = "";
 
         if (!data.length) {
-            tbody.innerHTML = `
-                <tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>`;
             await loadScanList();
             return;
         }
 
         data.forEach(a => {
-            const override = window.localAssignmentOverride[a.id] || {};
-            const start = override.start || a.shift?.startTime || "-";
-            const end = override.end || a.shift?.endTime || "-";
-
             const tr = document.createElement("tr");
 
             tr.innerHTML = `
                 <td>${a.personnel?.fullName || "-"}</td>
                 <td>${a.station?.name || "-"}</td>
-                <td>${start}</td>
-                <td>${end}</td>
+                <td>${a.startTime || "-"}</td>
+                <td>${a.endTime || "-"}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-danger"
                         onclick="deleteAssignment(${a.id})">Sil</button>
@@ -207,12 +192,12 @@ async function assignJob() {
             date: todayISO(),
             shiftId,
             stationId,
-            personnelId: selectedPersonnelId
+            personnelId: selectedPersonnelId,
+            startTime: start,
+            endTime: end
         };
 
-        const saved = await api("/assignments", "POST", body);
-
-        window.localAssignmentOverride[saved.id] = { start, end };
+        await api("/assignments", "POST", body);
 
         await loadTodayAssignments();
         await loadScanList();
@@ -231,8 +216,6 @@ async function deleteAssignment(id) {
     if (!confirm("Silinsin mi?")) return;
 
     await api(`/assignments/${id}`, "DELETE");
-
-    delete window.localAssignmentOverride[id];
 
     await loadTodayAssignments();
 }
