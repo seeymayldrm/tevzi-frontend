@@ -3,63 +3,77 @@ let stationsCache = [];
 let selectedPersonnelId = null;
 let assignedPersonnelIds = new Set();
 
+// FRONTEND ÜSTÜNDE SAAT OVERRIDE
+window.localAssignmentOverride = {};
+
 window.addEventListener("load", async () => {
     document.getElementById("startTime").value = "07:00";
     document.getElementById("endTime").value = "17:00";
 
     startClock();
-
     await loadStations();
     await loadTodayAssignments();
     await loadScanList();
 });
 
-/* ----------------------------  
-   0) Türkiye Saati İle Gün Başlangıcı
------------------------------ */
+/* ---------------------  
+   TR TARİHİ
+---------------------- */
 function todayISO() {
     const now = new Date();
-
-    const tzOffset = now.getTimezoneOffset() * 60000;
-    const turkey = new Date(now.getTime() - tzOffset + (3 * 60 * 60 * 1000));
-
-    return turkey.toISOString().split("T")[0];
+    return now.toISOString().split("T")[0];
 }
 
-/* ----------------------------  
-   1) Kart Okutanlar
------------------------------ */
+/* ---------------------  
+   CANLI SAAT
+---------------------- */
+function startClock() {
+    const clock = document.getElementById("liveClock");
+    setInterval(() => {
+        const d = new Date();
+        clock.textContent =
+            d.toLocaleDateString("tr-TR") +
+            " " +
+            d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    }, 1000);
+}
+
+/* ---------------------  
+   1) KART OKUTANLAR
+---------------------- */
 async function loadScanList() {
     try {
         const logs = await api("/nfc/today");
-
-        const scanListDiv = document.getElementById("scanList");
-        scanListDiv.innerHTML = "";
+        const div = document.getElementById("scanList");
+        div.innerHTML = "";
 
         if (!logs.length) {
-            scanListDiv.innerHTML = "Bugün kart okutan personel yok.";
+            div.innerHTML = "Bugün kart okutan personel yok.";
             return;
         }
 
-        const personMap = new Map();
+        const map = new Map();
 
         logs.forEach(l => {
             if (!l.personnel) return;
 
-            // sadece IN olan ilk log
-            let entry = logs.find(x => x.personnelId === l.personnelId && x.type === "IN");
+            const entry = logs.find(
+                x => x.personnelId === l.personnelId && x.type === "IN"
+            );
 
-            personMap.set(l.personnel.id, {
+            map.set(l.personnel.id, {
                 ...l.personnel,
                 entryTime: entry
-                    ? new Date(entry.scannedAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+                    ? new Date(entry.scannedAt).toLocaleTimeString("tr-TR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })
                     : "-"
             });
         });
 
-        personMap.forEach(p => {
+        map.forEach(p => {
             const btn = document.createElement("button");
-
             const text = `${p.fullName} – ${p.department || "-"} – ${p.entryTime}`;
 
             if (assignedPersonnelIds.has(p.id)) {
@@ -71,32 +85,27 @@ async function loadScanList() {
                 btn.onclick = () => selectPersonnel(p.id, btn);
             }
 
-            scanListDiv.appendChild(btn);
+            div.appendChild(btn);
         });
-
     } catch (err) {
-        console.error(err);
-        alert("Kart okutan personeller alınamadı: " + err.message);
+        alert("Kart okuma listesi alınamadı.");
     }
 }
 
 function selectPersonnel(id, btn) {
     selectedPersonnelId = id;
-
     document.querySelectorAll("#scanList button").forEach(b => {
         if (!b.classList.contains("disabled")) {
             b.classList.remove("btn-primary");
             b.classList.add("btn-light");
         }
     });
-
-    btn.classList.remove("btn-light");
     btn.classList.add("btn-primary");
 }
 
-/* ----------------------------  
-   2) İstasyon Yükle
------------------------------ */
+/* ---------------------  
+   2) İSTASYONLAR 
+---------------------- */
 async function loadStations() {
     try {
         const stations = await api("/stations");
@@ -112,13 +121,13 @@ async function loadStations() {
             select.appendChild(opt);
         });
     } catch (err) {
-        alert("İstasyon listesi alınamadı: " + err.message);
+        alert("İstasyon listesi alınamadı!");
     }
 }
 
-/* ----------------------------  
-   3) Bugünkü Atamaları Yükle
------------------------------ */
+/* ---------------------  
+   3) BUGÜNKÜ ATAMALAR
+---------------------- */
 async function loadTodayAssignments() {
     try {
         const date = todayISO();
@@ -131,22 +140,16 @@ async function loadTodayAssignments() {
         tbody.innerHTML = "";
 
         if (!data.length) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center py-3">
-                        Bugün için atanmış iş yok.
-                    </td>
-                </tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>`;
             await loadScanList();
             return;
         }
 
         data.forEach(a => {
-            // FRONTEND ÜZERİNDE START/END'e OVERRIDE UYGULUYORUZ
-            const local = window.localAssignmentOverride?.[a.id] || {};
+            const override = window.localAssignmentOverride[a.id] || {};
 
-            const start = local.start || a.shift?.startTime || "-";
-            const end = local.end || a.shift?.endTime || "-";
+            const start = override.start || a.shift?.startTime || "-";
+            const end = override.end || a.shift?.endTime || "-";
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -157,27 +160,23 @@ async function loadTodayAssignments() {
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-danger"
                         onclick="deleteAssignment(${a.id})">Sil</button>
-                </td>
-            `;
+                </td>`;
             tbody.appendChild(tr);
         });
 
         await loadScanList();
-
     } catch (err) {
-        alert("İş atamaları alınamadı: " + err.message);
+        alert("İş atamaları alınamadı.");
     }
 }
 
-/* ----------------------------  
-   4) İş Ata
------------------------------ */
-window.localAssignmentOverride = {};
-
+/* ---------------------  
+   4) İŞ ATA
+---------------------- */
 async function assignJob() {
     try {
         if (!selectedPersonnelId) {
-            alert("Lütfen kart okutan bir personel seçiniz!");
+            alert("Lütfen personel seçin!");
             return;
         }
 
@@ -187,10 +186,10 @@ async function assignJob() {
         }
 
         const stationId = Number(document.getElementById("stationSelect").value);
-        const shiftId = 1; // backend böyle çalışıyor (dokunmuyoruz)
+        const shiftId = 1;
 
-        const startTime = document.getElementById("startTime").value;
-        const endTime = document.getElementById("endTime").value;
+        const start = document.getElementById("startTime").value;
+        const end = document.getElementById("endTime").value;
 
         const body = {
             date: todayISO(),
@@ -199,20 +198,34 @@ async function assignJob() {
             personnelId: selectedPersonnelId
         };
 
-        const created = await api("/assignments", "POST", body);
+        const saved = await api("/assignments", "POST", body);
 
-        // SADECE FRONTEND'DE GÖRÜNEN START-END OVERRIDE
-        window.localAssignmentOverride[created.id] = {
-            start: startTime,
-            end: endTime
+        // FRONTEND SAAT OVERRIDE
+        window.localAssignmentOverride[saved.id] = {
+            start,
+            end
         };
-
-        alert("İş başarıyla atandı.");
 
         await loadTodayAssignments();
         await loadScanList();
 
+        alert("İş atandı!");
+
     } catch (err) {
-        alert("İş ataması yapılamadı: " + err.message);
+        alert("İş atanamadı.");
     }
 }
+
+/* ---------------------  
+   5) SİL
+---------------------- */
+async function deleteAssignment(id) {
+    if (!confirm("Silinsin mi?")) return;
+
+    await api(`/assignments/${id}`, "DELETE");
+
+    delete window.localAssignmentOverride[id];
+
+    await loadTodayAssignments();
+}
+
