@@ -36,19 +36,11 @@
                         <input id="filterName" type="text" class="form-control" placeholder="Ad Soyad">
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <input id="filterDept" type="text" class="form-control" placeholder="Bölüm">
                     </div>
 
-                    <div class="col-md-3">
-                        <select id="filterStatus" class="form-select">
-                            <option value="">Durum (Tümü)</option>
-                            <option value="true">Aktif</option>
-                            <option value="false">Pasif</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <button class="btn btn-primary w-100" onclick="loadPersonnel()">Filtrele</button>
                     </div>
                 </div>
@@ -66,7 +58,6 @@
                                 <th>Bölüm</th>
                                 <th>Ünvan</th>
                                 <th>Kart UID</th>
-                                <th>Durum</th>
                                 <th style="width:180px">İşlem</th>
                             </tr>
                         </thead>
@@ -98,12 +89,6 @@
 
                     <label class="form-label">Ünvan</label>
                     <input id="editTitle" type="text" class="form-control mb-2">
-
-                    <label class="form-label">Durum</label>
-                    <select id="editStatus" class="form-select">
-                        <option value="true">Aktif</option>
-                        <option value="false">Pasif</option>
-                    </select>
                 </div>
 
                 <div class="modal-footer">
