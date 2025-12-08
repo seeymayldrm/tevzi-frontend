@@ -20,9 +20,16 @@ window.addEventListener("load", async () => {
    TR TARİHİ
 ---------------------- */
 function todayISO() {
-    const now = new Date();
-    return now.toISOString().split("T")[0];
+    const tr = new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" });
+    const d = new Date(tr);
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 }
+
 
 /* ---------------------  
    CANLI SAAT
