@@ -3,10 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* -------------------------------
-   1) İSTASYON LİSTELEME
+   1) İSTASYON LİSTELEME (sadece aktifler)
 ---------------------------------- */
 async function loadStations() {
-    const stations = await api("/stations");
+    // Sadece aktif olanları alıyoruz
+    const stations = await api("/stations?active=true");
 
     const tbody = document.getElementById("stationsTable");
     tbody.innerHTML = "";
@@ -54,22 +55,24 @@ async function addStation() {
 }
 
 /* -------------------------------
-   3) İSTASYON SİLME
+   3) İSTASYON SİLME (soft delete)
 ---------------------------------- */
 async function deleteStation(id) {
     if (!confirm("Bu istasyonu silmek istediğine emin misin?")) return;
 
     await api(`/stations/${id}`, "DELETE");
-    loadStations(); // sayfada direkt kaybolur
+
+    loadStations(); // pasif olanlar görünmediği için direkt listeden düşer
 }
 
 /* -------------------------------
    4) DÜZENLEME MODALINI AÇ
 ---------------------------------- */
 async function openEdit(id) {
-    const stations = await api("/stations");
-    const st = stations.find(s => s.id === id);
+    // sadece aktif kayıtları alıyoruz
+    const stations = await api("/stations?active=true");
 
+    const st = stations.find(s => s.id === id);
     if (!st) return;
 
     document.getElementById("editId").value = st.id;
