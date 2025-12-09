@@ -53,10 +53,9 @@ body {
 }
 
 .sidebar-logo img {
-    width: 70px;
+    width: 150px;
     height: auto;
     margin-top: 8px;
-    filter: drop-shadow(0px 0px 3px rgba(255, 255, 255, 0.2));
 }
 
 /* ------------------------------
