@@ -1,7 +1,13 @@
+/* ------------------------------
+   GENEL
+------------------------------ */
 body {
     background: #f5f6fa;
 }
 
+/* ------------------------------
+   SIDEBAR
+------------------------------ */
 .sidebar {
     width: 240px;
     height: 100vh;
@@ -9,6 +15,10 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
 .sidebar a {
@@ -16,6 +26,7 @@ body {
     color: #cfd2dc;
     text-decoration: none;
     border-bottom: 1px solid #2a2a3a;
+    display: block;
 }
 
 .sidebar a:hover {
@@ -34,9 +45,29 @@ body {
     opacity: 0.5;
 }
 
+/* LOGO EKLENTİSİ */
+.sidebar-logo {
+    text-align: center;
+    padding: 15px 0 10px 0;
+    border-bottom: 1px solid #2a2a3a;
+}
+
+.sidebar-logo img {
+    width: 70px;
+    height: auto;
+    margin-top: 8px;
+    filter: drop-shadow(0px 0px 3px rgba(255, 255, 255, 0.2));
+}
+
+/* ------------------------------
+   CONTENT
+------------------------------ */
 .content {
+    margin-left: 240px;
+    /* sidebar genişliği */
     background: #fff;
     min-height: 100vh;
+    padding-bottom: 40px;
 }
 
 .table td,
@@ -44,9 +75,93 @@ body {
     vertical-align: middle;
 }
 
+/* Kart atanmış satır */
 .assigned-row {
     background-color: #e8f5e9 !important;
-    /* Açık yeşil */
     opacity: 0.6;
-    /* hafif soluk gösterir */
+}
+
+/* ------------------------------
+   RESPONSIVE TASARIM
+------------------------------ */
+
+/* 992px - Tablet ve küçük laptoplar */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .content {
+        margin-left: 200px;
+    }
+}
+
+/* 768px - Tablet */
+@media (max-width: 768px) {
+
+    /* Sidebar kapanır */
+    .sidebar {
+        position: absolute;
+        left: -240px;
+        transition: 0.3s ease;
+        z-index: 10;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    /* Hamburger menü */
+    .menu-toggle {
+        display: block;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 11;
+        background: #4c6ef5;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+    }
+
+    /* Content sidebar’a göre kayar */
+    .content {
+        margin-left: 0;
+        padding-top: 60px;
+    }
+
+    table {
+        font-size: 13px;
+    }
+
+    .table td,
+    .table th {
+        padding: 6px;
+    }
+}
+
+/* 480px - Telefon */
+@media (max-width: 480px) {
+    h3 {
+        font-size: 18px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    input,
+    select {
+        font-size: 14px !important;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    .sidebar-logo img {
+        width: 55px;
+    }
 }

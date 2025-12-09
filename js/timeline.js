@@ -2,6 +2,7 @@
 
 let timelineCache = [];
 let shiftsCache = [];
+let stationsCache = [];
 
 /* ---------------------------------------------
    🇹🇷 TR BUGÜN TARİHİ
@@ -15,13 +16,12 @@ function getTodayLocal() {
 }
 
 /* ---------------------------------------------
-   🇹🇷 TR SAATİNİ JSON TARİHİNDEN RAW ÇEK (UTC KAYMASIZ!)
-   "2025-12-09T01:08:40.000Z" → "01:08"
+   🇹🇷 TR SAATİNİ JSON TARİHİNDEN RAW ÇEK
 --------------------------------------------- */
 function extractTimeFromTR(dateString) {
-    const timePart = dateString.split("T")[1];     // "01:08:40.000Z"
-    const [hour, minute] = timePart.split(":");    // ["01","08","40.000Z"]
-    return `${hour}:${minute}`;                    // "01:08"
+    const timePart = dateString.split("T")[1];
+    const [hour, minute] = timePart.split(":");
+    return `${hour}:${minute}`;
 }
 
 /* ---------------------------------------------
@@ -30,11 +30,12 @@ function extractTimeFromTR(dateString) {
 window.addEventListener("load", async () => {
     document.getElementById("tlDate").value = getTodayLocal();
     await loadShifts();
+    await loadStationsForTimeline();   // 🔥 YENİ EKLENDİ
     await loadTimeline();
 });
 
 /* ---------------------------------------------
-   Vardiya Yükleme
+   VARDİYA YÜKLEME
 --------------------------------------------- */
 async function loadShifts() {
     try {
@@ -43,6 +44,7 @@ async function loadShifts() {
 
         const sel = document.getElementById("tlShift");
         sel.innerHTML = `<option value="">Tümü</option>`;
+
         data.forEach(s => {
             const opt = document.createElement("option");
             opt.value = s.id;
@@ -57,12 +59,37 @@ async function loadShifts() {
 }
 
 /* ---------------------------------------------
-   Timeline Yükleme
+   İSTASYON YÜKLEME (Yeni)
+--------------------------------------------- */
+async function loadStationsForTimeline() {
+    try {
+        const data = await api("/stations?active=true");
+        stationsCache = data;
+
+        const sel = document.getElementById("tlStation");
+        sel.innerHTML = `<option value="">Tümü</option>`;
+
+        data.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = `${s.name} (${s.code || "-"})`;
+            sel.appendChild(opt);
+        });
+
+    } catch (err) {
+        console.error(err);
+        alert("İstasyon listesi alınamadı: " + err.message);
+    }
+}
+
+/* ---------------------------------------------
+   TIMELINE YÜKLEME
 --------------------------------------------- */
 async function loadTimeline() {
     try {
         const date = document.getElementById("tlDate").value;
         const shiftId = document.getElementById("tlShift").value;
+        const stationId = document.getElementById("tlStation").value; // 🔥 Yeni filtre
 
         if (!date) {
             alert("Lütfen tarih seç.");
@@ -71,20 +98,23 @@ async function loadTimeline() {
 
         // 1) Assignment getir
         let url = `/assignments?date=${date}`;
+
         if (shiftId) url += `&shiftId=${shiftId}`;
+        if (stationId) url += `&stationId=${stationId}`; // 🔥 Yeni eklendi
+
         const assignments = await api(url);
 
         // 2) Logları getir
         const logs = await api(`/nfc/logs?date=${date}`);
 
-        // 3) IN/OUT hesaplama (TR raw saatine göre)
+        // 3) IN/OUT hesaplama
         const scanMap = {};
 
         logs.forEach(l => {
             if (!l.personnel) return;
 
             const pid = l.personnel.id;
-            const time = extractTimeFromTR(l.scannedAt); // 🔥 doğru saat
+            const time = extractTimeFromTR(l.scannedAt);
 
             if (!scanMap[pid]) {
                 scanMap[pid] = {
@@ -139,7 +169,7 @@ async function loadTimeline() {
 }
 
 /* ---------------------------------------------
-   CSV EXPORT (TR Saatine Göre Raw)
+   CSV EXPORT
 --------------------------------------------- */
 function exportTimelineCsv() {
     if (!timelineCache.length) {
@@ -173,7 +203,7 @@ function exportTimelineCsv() {
 
             const tarih = l.scannedAt.split("T")[0].split("-").reverse().join(".");
             const saat = extractTimeFromTR(l.scannedAt);
-            const tam = `${tarih} ${saat}`; // 09.12.2025 01:08
+            const tam = `${tarih} ${saat}`;
 
             if (!scanMap[pid]) {
                 scanMap[pid] = { firstIn: null, lastOut: null };

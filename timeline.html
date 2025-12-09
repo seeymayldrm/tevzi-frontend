@@ -9,18 +9,23 @@
 </head>
 
 <body>
+    <button class="menu-toggle d-md-none" onclick="toggleMenu()">☰</button>
+
     <div class="d-flex">
 
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="p-3 text-white fw-bold fs-5 border-bottom">TEVZİ NFC</div>
+            <div class="sidebar-logo">
+                <div class="fw-bold fs-5">VATAN NFC</div>
+                <img src="assets/logo.png" alt="Logo">
+            </div>
+
 
             <a href="tevzi.html">İş Atama</a>
             <a href="timeline.html" class="active">Zaman Çizelgesi</a>
             <a href="nfc-logs.html">NFC Logları</a>
             <a href="personnel.html">Personel Yönetimi</a>
             <a href="card-management.html">Kart Yönetimi</a>
-
 
             <div class="sidebar-title">Yönetim</div>
             <a href="settings.html">Ayarlar</a>
@@ -48,11 +53,19 @@
                         </select>
                     </div>
 
+                    <!-- 🔥 YENİ — İSTASYON FİLTRESİ -->
+                    <div class="col-md-3">
+                        <label class="form-label">İstasyon</label>
+                        <select id="tlStation" class="form-select">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+
                     <div class="col-md-3">
                         <button class="btn btn-primary w-100" onclick="loadTimeline()">Listele</button>
                     </div>
 
-                    <div class="col-md-3 text-md-end">
+                    <div class="col-md-12 text-md-end mt-2">
                         <button class="btn btn-outline-success" onclick="exportTimelineCsv()">
                             CSV indir (Puantör)
                         </button>
