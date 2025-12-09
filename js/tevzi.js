@@ -43,7 +43,7 @@ function startClock() {
 }
 
 /* -----------------------------------------
-   1) BUGÜN KART OKUTANLAR (TABLO)
+   1) BUGÜN KART OKUTANLAR
 ----------------------------------------- */
 async function loadScanList() {
     try {
@@ -110,10 +110,12 @@ function renderScanTable() {
         const tr = document.createElement("tr");
 
         const isAssigned = assignedPersonnelIds.has(p.id);
-        const checked = selectedPersonnelIds.has(p.id) ? "checked" : "";
+        const isSelected = selectedPersonnelIds.has(p.id);
 
+        // atanmışsa asla checked gösterme
+        const checked = (!isAssigned && isSelected) ? "checked" : "";
         const disabled = isAssigned ? "disabled" : "";
-        const rowClass = isAssigned ? "assigned-row" : "";  // CSS ile renklendireceğiz
+        const rowClass = isAssigned ? "assigned-row" : "";
 
         tr.className = rowClass;
 
@@ -131,7 +133,6 @@ function renderScanTable() {
     });
 }
 
-
 /* -----------------------------------------
    1.3) Tekli seçim
 ----------------------------------------- */
@@ -141,10 +142,14 @@ function toggleSelect(id, checkbox) {
 }
 
 /* -----------------------------------------
-   1.4) Tümünü seç (filtrelenmiş)
+   1.4) Tümünü seç (atanmamış olanları)
 ----------------------------------------- */
 function selectAllFiltered() {
-    filteredScanList.forEach(p => selectedPersonnelIds.add(p.id));
+    filteredScanList.forEach(p => {
+        if (!assignedPersonnelIds.has(p.id)) {
+            selectedPersonnelIds.add(p.id);
+        }
+    });
     renderScanTable();
 }
 
@@ -157,7 +162,7 @@ function clearAllSelected() {
 }
 
 /* -----------------------------------------
-   1.6) Tablonun üstündeki checkbox
+   1.6) Header checkbox select
 ----------------------------------------- */
 function toggleSelectAll(checkbox) {
     if (checkbox.checked) selectAllFiltered();
@@ -198,6 +203,13 @@ async function loadTodayAssignments() {
         assignmentsCache = data;
         assignedPersonnelIds = new Set(data.map(a => a.personnelId));
 
+        // seçili listeden atanmışları temizle
+        selectedPersonnelIds.forEach(id => {
+            if (assignedPersonnelIds.has(id)) {
+                selectedPersonnelIds.delete(id);
+            }
+        });
+
         const tbody = document.getElementById("assignmentTable");
         tbody.innerHTML = "";
 
@@ -232,7 +244,7 @@ async function loadTodayAssignments() {
 }
 
 /* -----------------------------------------
-   4) İŞ ATA (tekli + çoklu)
+   4) İŞ ATA (çoklu)
 ----------------------------------------- */
 async function assignJob() {
     try {
@@ -248,7 +260,6 @@ async function assignJob() {
         const end = document.getElementById("endTime").value;
 
         for (let id of selectedPersonnelIds) {
-
             if (assignedPersonnelIds.has(id)) continue;
 
             const body = {
