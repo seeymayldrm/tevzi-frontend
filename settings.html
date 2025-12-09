@@ -39,7 +39,7 @@
                             <input id="stName" class="form-control" placeholder="İstasyon Adı">
                         </div>
                         <div class="col-md-4">
-                            <input id="stCode" class="form-control" placeholder="Kod (örn: HAT1)">
+                            <input id="stCode" class="form-control" placeholder="Kod (örn: HH1)">
                         </div>
                         <div class="col-md-4">
                             <input id="stDept" class="form-control" placeholder="Departman (opsiyonel)">
@@ -62,7 +62,6 @@
                                 <th>Ad</th>
                                 <th>Kod</th>
                                 <th>Departman</th>
-                                <th>Aktiflik</th>
                                 <th width="150">İşlemler</th>
                             </tr>
                         </thead>
@@ -94,12 +93,6 @@
 
                     <label class="mt-2">Departman</label>
                     <input id="editDept" class="form-control">
-
-                    <label class="mt-2">Aktif Mi?</label>
-                    <select id="editActive" class="form-control">
-                        <option value="true">Aktif</option>
-                        <option value="false">Pasif</option>
-                    </select>
                 </div>
 
                 <div class="modal-footer">
@@ -110,17 +103,9 @@
         </div>
     </div>
 
-
-    <!-- JS DOSYA SIRASI DOĞRU ŞEKİLDE EKLENDİ -->
     <script src="js/bootstrap.bundle.min.js"></script>
-
-    <!-- API FONKSİYONLARI BURADA YÜKLENİR -->
     <script src="js/api.js"></script>
-
-    <!-- Uygulama genel fonksiyonları -->
     <script src="js/app.js"></script>
-
-    <!-- Bu sayfaya özel JS en sonda -->
     <script src="js/settings.js"></script>
 
 </body>

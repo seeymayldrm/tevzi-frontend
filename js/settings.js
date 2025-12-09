@@ -1,6 +1,3 @@
-// SETTINGS.JS
-// İstasyon yönetimi (listeleme, ekleme, silme, düzenleme)
-
 document.addEventListener("DOMContentLoaded", () => {
     loadStations();
 });
@@ -21,12 +18,6 @@ async function loadStations() {
                 <td>${st.name}</td>
                 <td>${st.code}</td>
                 <td>${st.department || "-"}</td>
-                <td>
-                    ${st.isActive ?
-                '<span class="badge bg-success">Aktif</span>' :
-                '<span class="badge bg-secondary">Pasif</span>'
-            }
-                </td>
                 <td>
                     <button class="btn btn-sm btn-warning" onclick="openEdit(${st.id})">Düzenle</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteStation(${st.id})">Sil</button>
@@ -63,13 +54,13 @@ async function addStation() {
 }
 
 /* -------------------------------
-   3) İSTASYON SİLME (SOFT DELETE)
+   3) İSTASYON SİLME
 ---------------------------------- */
 async function deleteStation(id) {
     if (!confirm("Bu istasyonu silmek istediğine emin misin?")) return;
 
     await api(`/stations/${id}`, "DELETE");
-    loadStations();
+    loadStations(); // sayfada direkt kaybolur
 }
 
 /* -------------------------------
@@ -79,11 +70,12 @@ async function openEdit(id) {
     const stations = await api("/stations");
     const st = stations.find(s => s.id === id);
 
+    if (!st) return;
+
     document.getElementById("editId").value = st.id;
     document.getElementById("editName").value = st.name;
     document.getElementById("editCode").value = st.code;
     document.getElementById("editDept").value = st.department || "";
-    document.getElementById("editActive").value = st.isActive;
 
     const modal = new bootstrap.Modal(document.getElementById("editStationModal"));
     modal.show();
@@ -98,8 +90,7 @@ async function saveEdit() {
     await api(`/stations/${id}`, "PUT", {
         name: document.getElementById("editName").value.trim(),
         code: document.getElementById("editCode").value.trim(),
-        department: document.getElementById("editDept").value.trim(),
-        isActive: document.getElementById("editActive").value === "true"
+        department: document.getElementById("editDept").value.trim()
     });
 
     loadStations();
