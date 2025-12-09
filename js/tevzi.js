@@ -109,10 +109,19 @@ function renderScanTable() {
     filteredScanList.forEach(p => {
         const tr = document.createElement("tr");
 
+        const isAssigned = assignedPersonnelIds.has(p.id);
         const checked = selectedPersonnelIds.has(p.id) ? "checked" : "";
 
+        const disabled = isAssigned ? "disabled" : "";
+        const rowClass = isAssigned ? "assigned-row" : "";  // CSS ile renklendireceğiz
+
+        tr.className = rowClass;
+
         tr.innerHTML = `
-            <td><input type="checkbox" ${checked} onchange="toggleSelect(${p.id}, this)"></td>
+            <td>
+                <input type="checkbox" ${checked} ${disabled}
+                    onchange="toggleSelect(${p.id}, this)">
+            </td>
             <td>${p.fullName}</td>
             <td>${p.department || "-"}</td>
             <td>${p.entryTime}</td>
@@ -121,6 +130,7 @@ function renderScanTable() {
         tbody.appendChild(tr);
     });
 }
+
 
 /* -----------------------------------------
    1.3) Tekli seçim

@@ -43,3 +43,10 @@ body {
 .table th {
     vertical-align: middle;
 }
+
+.assigned-row {
+    background-color: #e8f5e9 !important;
+    /* Açık yeşil */
+    opacity: 0.6;
+    /* hafif soluk gösterir */
+}
