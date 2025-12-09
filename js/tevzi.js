@@ -7,7 +7,7 @@ let selectedPersonnelIds = new Set();
 
 window.addEventListener("load", async () => {
     document.getElementById("startTime").value = "07:00";
-    document.getElementById("endTime").value = "17:00";
+    document.getElementById("endTime").value = "19:00";
 
     startClock();
     await loadStations();
