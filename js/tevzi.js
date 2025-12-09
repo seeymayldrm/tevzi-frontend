@@ -1,7 +1,9 @@
 let assignmentsCache = [];
 let stationsCache = [];
-let selectedPersonnelId = null;
-let assignedPersonnelIds = new Set();
+let scanList = [];
+let filteredScanList = [];
+
+let selectedPersonnelIds = new Set();
 
 window.addEventListener("load", async () => {
     document.getElementById("startTime").value = "07:00";
@@ -11,6 +13,9 @@ window.addEventListener("load", async () => {
     await loadStations();
     await loadTodayAssignments();
     await loadScanList();
+
+    document.getElementById("filterName").addEventListener("input", applyFilters);
+    document.getElementById("filterDept").addEventListener("input", applyFilters);
 });
 
 /* -----------------------------------------
@@ -38,16 +43,16 @@ function startClock() {
 }
 
 /* -----------------------------------------
-   1) BUGÜN KART OKUTANLAR
+   1) BUGÜN KART OKUTANLAR (TABLO)
 ----------------------------------------- */
 async function loadScanList() {
     try {
         const logs = await api("/nfc/today");
-        const div = document.getElementById("scanList");
-        div.innerHTML = "";
+        const tbody = document.getElementById("scanTableBody");
+        tbody.innerHTML = "";
 
         if (!logs.length) {
-            div.innerHTML = "Bugün kart okutan personel yok.";
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-2">Bugün kart okutan personel yok.</td></tr>`;
             return;
         }
 
@@ -66,38 +71,87 @@ async function loadScanList() {
             });
         });
 
-        map.forEach(p => {
-            const btn = document.createElement("button");
-            const text = `${p.fullName} – ${p.department || "-"} – ${p.entryTime}`;
-
-            if (assignedPersonnelIds.has(p.id)) {
-                btn.className = "btn btn-secondary w-100 mb-2 text-start disabled";
-                btn.textContent = text + " ✓";
-            } else {
-                btn.className = "btn btn-light w-100 mb-2 text-start";
-                btn.textContent = text;
-                btn.onclick = () => selectPersonnel(p.id, btn);
-            }
-
-            div.appendChild(btn);
-        });
+        scanList = Array.from(map.values());
+        applyFilters();
 
     } catch (err) {
         alert("Kart okuma listesi alınamadı.");
     }
 }
 
-function selectPersonnel(id, btn) {
-    selectedPersonnelId = id;
+/* -----------------------------------------
+   1.1) Filtreleme
+----------------------------------------- */
+function applyFilters() {
+    const nameF = document.getElementById("filterName").value.toLowerCase();
+    const deptF = document.getElementById("filterDept").value.toLowerCase();
 
-    document.querySelectorAll("#scanList button").forEach(b => {
-        if (!b.classList.contains("disabled")) {
-            b.classList.remove("btn-primary");
-            b.classList.add("btn-light");
-        }
+    filteredScanList = scanList.filter(p =>
+        p.fullName.toLowerCase().includes(nameF) &&
+        (p.department || "-").toLowerCase().includes(deptF)
+    );
+
+    renderScanTable();
+}
+
+/* -----------------------------------------
+   1.2) Tablo Render
+----------------------------------------- */
+function renderScanTable() {
+    const tbody = document.getElementById("scanTableBody");
+    tbody.innerHTML = "";
+
+    if (!filteredScanList.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-2 text-center">Sonuç bulunamadı.</td></tr>`;
+        return;
+    }
+
+    filteredScanList.forEach(p => {
+        const tr = document.createElement("tr");
+
+        const checked = selectedPersonnelIds.has(p.id) ? "checked" : "";
+
+        tr.innerHTML = `
+            <td><input type="checkbox" ${checked} onchange="toggleSelect(${p.id}, this)"></td>
+            <td>${p.fullName}</td>
+            <td>${p.department || "-"}</td>
+            <td>${p.entryTime}</td>
+        `;
+
+        tbody.appendChild(tr);
     });
+}
 
-    btn.classList.add("btn-primary");
+/* -----------------------------------------
+   1.3) Tekli seçim
+----------------------------------------- */
+function toggleSelect(id, checkbox) {
+    if (checkbox.checked) selectedPersonnelIds.add(id);
+    else selectedPersonnelIds.delete(id);
+}
+
+/* -----------------------------------------
+   1.4) Tümünü seç (filtrelenmiş)
+----------------------------------------- */
+function selectAllFiltered() {
+    filteredScanList.forEach(p => selectedPersonnelIds.add(p.id));
+    renderScanTable();
+}
+
+/* -----------------------------------------
+   1.5) Tümünü temizle
+----------------------------------------- */
+function clearAllSelected() {
+    selectedPersonnelIds.clear();
+    renderScanTable();
+}
+
+/* -----------------------------------------
+   1.6) Tablonun üstündeki checkbox
+----------------------------------------- */
+function toggleSelectAll(checkbox) {
+    if (checkbox.checked) selectAllFiltered();
+    else clearAllSelected();
 }
 
 /* -----------------------------------------
@@ -105,7 +159,7 @@ function selectPersonnel(id, btn) {
 ----------------------------------------- */
 async function loadStations() {
     try {
-        const stations = await api("/stations");
+        const stations = await api("/stations?active=true");
         stationsCache = stations;
 
         const select = document.getElementById("stationSelect");
@@ -168,17 +222,12 @@ async function loadTodayAssignments() {
 }
 
 /* -----------------------------------------
-   4) İŞ ATA
+   4) İŞ ATA (tekli + çoklu)
 ----------------------------------------- */
 async function assignJob() {
     try {
-        if (!selectedPersonnelId) {
-            alert("Lütfen personel seçin!");
-            return;
-        }
-
-        if (assignedPersonnelIds.has(selectedPersonnelId)) {
-            alert("Bu personel bugün zaten iş aldı!");
+        if (selectedPersonnelIds.size === 0) {
+            alert("Lütfen en az bir personel seçin!");
             return;
         }
 
@@ -188,21 +237,28 @@ async function assignJob() {
         const start = document.getElementById("startTime").value;
         const end = document.getElementById("endTime").value;
 
-        const body = {
-            date: todayISO(),
-            shiftId,
-            stationId,
-            personnelId: selectedPersonnelId,
-            startTime: start,
-            endTime: end
-        };
+        for (let id of selectedPersonnelIds) {
 
-        await api("/assignments", "POST", body);
+            if (assignedPersonnelIds.has(id)) continue;
+
+            const body = {
+                date: todayISO(),
+                shiftId,
+                stationId,
+                personnelId: id,
+                startTime: start,
+                endTime: end
+            };
+
+            await api("/assignments", "POST", body);
+        }
+
+        alert("İş ataması tamamlandı!");
+
+        selectedPersonnelIds.clear();
 
         await loadTodayAssignments();
         await loadScanList();
-
-        alert("İş atandı!");
 
     } catch (err) {
         alert("İş atanamadı.");
