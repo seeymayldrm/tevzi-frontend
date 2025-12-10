@@ -17,12 +17,23 @@ async function login() {
     try {
         const data = await api("/auth/login", "POST", { username, password });
 
+        // TOKEN KAYDET
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.user.role);
         localStorage.setItem("companyId", data.user.companyId);
         localStorage.setItem("username", data.user.username);
 
-        window.location.href = "tevzi.html";
+        // ⭐ ROLE GÖRE YÖNLENDİRME ⭐
+        if (data.user.role === "SUPERADMIN") {
+            window.location.href = "superadmin.html";
+        }
+        else if (data.user.role === "ADMIN") {
+            window.location.href = "tevzi.html";
+        }
+        else {
+            // Supervisor veya başka roller için
+            window.location.href = "tevzi.html";
+        }
 
     } catch (err) {
         console.error(err);
