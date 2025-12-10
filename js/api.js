@@ -1,6 +1,5 @@
 // js/api.js
 
-// Lokal geliştirme (localhost) ve Railway prod arasında otomatik seçim
 const API_BASE =
     window.location.hostname === "localhost"
         ? "http://localhost:3000/api"

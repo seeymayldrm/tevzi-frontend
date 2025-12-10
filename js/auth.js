@@ -18,6 +18,10 @@ async function login() {
         const data = await api("/auth/login", "POST", { username, password });
 
         localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("companyId", data.user.companyId);
+        localStorage.setItem("username", data.user.username);
+
         window.location.href = "tevzi.html";
 
     } catch (err) {
