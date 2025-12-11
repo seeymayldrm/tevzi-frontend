@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Tevzi İş Atama Paneli</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Dinamik favicon -->
+    <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
+
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,14 +15,13 @@
 <body>
     <button class="menu-toggle d-md-none" onclick="toggleMenu()">☰</button>
 
-
     <div class="d-flex">
 
         <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-logo">
-                <div class="fw-bold fs-5">VATAN NFC</div>
-                <img src="assets/logo.png" alt="Logo">
+                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
+                <img id="companyLogo" src="assets/logo.png" alt="Logo">
             </div>
 
             <a href="tevzi.html" class="active">İş Atama</a>
@@ -27,7 +29,6 @@
             <a href="nfc-logs.html">NFC Logları</a>
             <a href="personnel.html">Personel Yönetimi</a>
             <a href="card-management.html">Kart Yönetimi</a>
-
 
             <div class="sidebar-title">Yönetim</div>
             <a href="settings.html">Ayarlar</a>

@@ -6,6 +6,37 @@ let filteredScanList = [];
 let selectedPersonnelIds = new Set();
 
 window.addEventListener("load", async () => {
+
+    /* -----------------------------------------
+       0) ŞİRKET BİLGİLERİNİ SAYFAYA UYGULA
+    ------------------------------------------ */
+
+    const cname = localStorage.getItem("companyName");
+    const clogo = localStorage.getItem("companyLogo");
+    const cfavicon = localStorage.getItem("companyFavicon");
+
+    // Şirket adı
+    const companyNameEl = document.getElementById("companyName");
+    if (companyNameEl && cname) {
+        companyNameEl.innerText = cname;
+    }
+
+    // Logo
+    const companyLogoEl = document.getElementById("companyLogo");
+    if (companyLogoEl && clogo) {
+        companyLogoEl.src = clogo;
+    }
+
+    // Favicon
+    const faviconEl = document.getElementById("faviconTag");
+    if (faviconEl && cfavicon) {
+        faviconEl.href = cfavicon;
+    }
+
+
+    /* -----------------------------------------
+       SENİN ESKİ LOAD İŞLEMLERİN
+    ------------------------------------------ */
     document.getElementById("startTime").value = "07:00";
     document.getElementById("endTime").value = "19:00";
 
@@ -112,7 +143,6 @@ function renderScanTable() {
         const isAssigned = assignedPersonnelIds.has(p.id);
         const isSelected = selectedPersonnelIds.has(p.id);
 
-        // atanmışsa asla checked gösterme
         const checked = (!isAssigned && isSelected) ? "checked" : "";
         const disabled = isAssigned ? "disabled" : "";
         const rowClass = isAssigned ? "assigned-row" : "";
@@ -142,7 +172,7 @@ function toggleSelect(id, checkbox) {
 }
 
 /* -----------------------------------------
-   1.4) Tümünü seç (atanmamış olanları)
+   1.4) Tümünü seç
 ----------------------------------------- */
 function selectAllFiltered() {
     filteredScanList.forEach(p => {
@@ -203,7 +233,6 @@ async function loadTodayAssignments() {
         assignmentsCache = data;
         assignedPersonnelIds = new Set(data.map(a => a.personnelId));
 
-        // seçili listeden atanmışları temizle
         selectedPersonnelIds.forEach(id => {
             if (assignedPersonnelIds.has(id)) {
                 selectedPersonnelIds.delete(id);
