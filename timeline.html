@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Zaman Çizelgesi | Tevzi Panel</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- 🔥 Dinamik favicon -->
+    <link id="dynamicFavicon" rel="icon" type="image/png" href="">
+
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -17,10 +20,9 @@
         <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-logo">
-                <div class="fw-bold fs-5">VATAN NFC</div>
-                <img src="assets/logo.png" alt="Logo">
+                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
+                <img id="companyLogo" src="assets/logo.png" alt="Logo">
             </div>
-
 
             <a href="tevzi.html">İş Atama</a>
             <a href="timeline.html" class="active">Zaman Çizelgesi</a>
@@ -54,7 +56,6 @@
                         </select>
                     </div>
 
-                    <!-- 🔥 YENİ — İSTASYON FİLTRESİ -->
                     <div class="col-md-3">
                         <label class="form-label">İstasyon</label>
                         <select id="tlStation" class="form-select">
@@ -96,6 +97,28 @@
 
         </div>
     </div>
+
+    <!-- 🔥 Dinamik Branding Script -->
+    <script>
+        async function loadCompanyBranding() {
+            try {
+                const branding = await api("/companies/my");
+
+                if (branding.companyName)
+                    document.getElementById("companyName").textContent = branding.companyName;
+
+                if (branding.logoUrl)
+                    document.getElementById("companyLogo").src = branding.logoUrl;
+
+                if (branding.faviconUrl)
+                    document.getElementById("dynamicFavicon").href = branding.faviconUrl;
+
+            } catch (err) {
+                console.error("Branding yüklenemedi:", err);
+            }
+        }
+        loadCompanyBranding();
+    </script>
 
     <script src="js/app.js"></script>
     <script src="js/api.js"></script>
