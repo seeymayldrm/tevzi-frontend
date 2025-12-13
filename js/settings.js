@@ -1,12 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
     loadStations();
+    loadDepartments();
 });
 
-/* -------------------------------
-   1) İSTASYON LİSTELEME (sadece aktifler)
----------------------------------- */
+/* =====================================================
+   STATION YÖNETİMİ
+===================================================== */
+
+/* 1) İSTASYON LİSTELEME (aktifler) */
 async function loadStations() {
-    // Sadece aktif olanları alıyoruz
     const stations = await api("/stations?active=true");
 
     const tbody = document.getElementById("stationsTable");
@@ -20,17 +22,21 @@ async function loadStations() {
                 <td>${st.code}</td>
                 <td>${st.department || "-"}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick="openEdit(${st.id})">Düzenle</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteStation(${st.id})">Sil</button>
+                    <button class="btn btn-sm btn-warning"
+                        onclick="openEdit(${st.id})">
+                        Düzenle
+                    </button>
+                    <button class="btn btn-sm btn-danger"
+                        onclick="deleteStation(${st.id})">
+                        Sil
+                    </button>
                 </td>
             </tr>
         `;
     });
 }
 
-/* -------------------------------
-   2) YENİ İSTASYON EKLEME
----------------------------------- */
+/* 2) YENİ İSTASYON EKLEME */
 async function addStation() {
     const name = document.getElementById("stName").value.trim();
     const code = document.getElementById("stCode").value.trim();
@@ -54,24 +60,17 @@ async function addStation() {
     loadStations();
 }
 
-/* -------------------------------
-   3) İSTASYON SİLME (soft delete)
----------------------------------- */
+/* 3) İSTASYON SİLME (soft delete) */
 async function deleteStation(id) {
     if (!confirm("Bu istasyonu silmek istediğine emin misin?")) return;
 
     await api(`/stations/${id}`, "DELETE");
-
-    loadStations(); // pasif olanlar görünmediği için direkt listeden düşer
+    loadStations();
 }
 
-/* -------------------------------
-   4) DÜZENLEME MODALINI AÇ
----------------------------------- */
+/* 4) DÜZENLEME MODALI */
 async function openEdit(id) {
-    // sadece aktif kayıtları alıyoruz
     const stations = await api("/stations?active=true");
-
     const st = stations.find(s => s.id === id);
     if (!st) return;
 
@@ -80,13 +79,12 @@ async function openEdit(id) {
     document.getElementById("editCode").value = st.code;
     document.getElementById("editDept").value = st.department || "";
 
-    const modal = new bootstrap.Modal(document.getElementById("editStationModal"));
-    modal.show();
+    new bootstrap.Modal(
+        document.getElementById("editStationModal")
+    ).show();
 }
 
-/* -------------------------------
-   5) DÜZENLEME KAYDET
----------------------------------- */
+/* 5) DÜZENLEME KAYDET */
 async function saveEdit() {
     const id = document.getElementById("editId").value;
 
@@ -97,6 +95,57 @@ async function saveEdit() {
     });
 
     loadStations();
+    bootstrap.Modal
+        .getInstance(document.getElementById("editStationModal"))
+        .hide();
+}
 
-    bootstrap.Modal.getInstance(document.getElementById("editStationModal")).hide();
+/* =====================================================
+   DEPARTMENT YÖNETİMİ (YENİ)
+===================================================== */
+
+/* 6) DEPARTMAN LİSTELEME */
+async function loadDepartments() {
+    const departments = await api("/departments?active=true");
+
+    const tbody = document.getElementById("departmentsTable");
+    tbody.innerHTML = "";
+
+    departments.forEach(dep => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${dep.id}</td>
+                <td>${dep.name}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger"
+                        onclick="deleteDepartment(${dep.id})">
+                        Sil
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+/* 7) YENİ DEPARTMAN EKLEME */
+async function addDepartment() {
+    const name = document.getElementById("depName").value.trim();
+
+    if (!name) {
+        alert("Departman adı zorunlu.");
+        return;
+    }
+
+    await api("/departments", "POST", { name });
+
+    document.getElementById("depName").value = "";
+    loadDepartments();
+}
+
+/* 8) DEPARTMAN SİLME (soft delete) */
+async function deleteDepartment(id) {
+    if (!confirm("Bu departman pasif yapılsın mı?")) return;
+
+    await api(`/departments/${id}`, "DELETE");
+    loadDepartments();
 }

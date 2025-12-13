@@ -15,6 +15,7 @@
 
     <div class="d-flex">
 
+        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-logo">
                 <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
@@ -27,62 +28,119 @@
             <a href="personnel.html">Personel Yönetimi</a>
             <a href="card-management.html">Kart Yönetimi</a>
 
-
             <div class="sidebar-title">Yönetim</div>
             <a href="settings.html" class="active">Ayarlar</a>
         </div>
 
+        <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold mb-0">Ayarlar → İstasyon Yönetimi</h3>
+                <h3 class="fw-bold mb-0">Ayarlar</h3>
                 <button class="btn btn-outline-danger btn-sm" onclick="logout()">Çıkış Yap</button>
             </div>
 
-            <!-- İSTASYON EKLEME FORMU -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Yeni İstasyon Ekle</h5>
+            <!-- =========================
+                 YAN YANA BLOKLAR
+            ========================== -->
+            <div class="row g-4">
 
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <input id="stName" class="form-control" placeholder="İstasyon Adı">
-                        </div>
-                        <div class="col-md-4">
-                            <input id="stCode" class="form-control" placeholder="Kod (örn: HH1)">
-                        </div>
-                        <div class="col-md-4">
-                            <input id="stDept" class="form-control" placeholder="Departman (opsiyonel)">
+                <!-- SOL: İSTASYON YÖNETİMİ -->
+                <div class="col-lg-6">
+
+                    <!-- İSTASYON EKLE -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">İstasyon Yönetimi</h5>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <input id="stName" class="form-control" placeholder="İstasyon Adı">
+                                </div>
+                                <div class="col-md-4">
+                                    <input id="stCode" class="form-control" placeholder="Kod (örn: HH1)">
+                                </div>
+                                <div class="col-md-4">
+                                    <input id="stDept" class="form-control" placeholder="Departman (opsiyonel)">
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary mt-3" onclick="addStation()">
+                                İstasyon Ekle
+                            </button>
                         </div>
                     </div>
 
-                    <button class="btn btn-primary mt-3" onclick="addStation()">Ekle</button>
-                </div>
-            </div>
+                    <!-- İSTASYON LİSTESİ -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Mevcut İstasyonlar</h6>
 
-            <!-- İSTASYON LİSTESİ -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Mevcut İstasyonlar</h5>
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Ad</th>
+                                        <th>Kod</th>
+                                        <th>Departman</th>
+                                        <th width="150">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stationsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Ad</th>
-                                <th>Kod</th>
-                                <th>Departman</th>
-                                <th width="150">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stationsTable"></tbody>
-                    </table>
                 </div>
+
+                <!-- SAĞ: DEPARTMAN YÖNETİMİ -->
+                <div class="col-lg-6">
+
+                    <!-- DEPARTMAN EKLE -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Departman Yönetimi</h5>
+
+                            <div class="row g-3">
+                                <div class="col-md-9">
+                                    <input id="depName" class="form-control" placeholder="Departman Adı">
+                                </div>
+                                <div class="col-md-3 d-grid">
+                                    <button class="btn btn-success" onclick="addDepartment()">
+                                        Departman Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DEPARTMAN LİSTESİ -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Mevcut Departmanlar</h6>
+
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Ad</th>
+                                        <th>Durum</th>
+                                        <th width="120">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="departmentsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
         </div>
     </div>
 
-
-    <!-- DÜZENLEME MODALI -->
+    <!-- =========================
+         İSTASYON DÜZENLEME MODAL
+    ========================== -->
     <div class="modal fade" id="editStationModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -112,7 +170,7 @@
         </div>
     </div>
 
-
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
