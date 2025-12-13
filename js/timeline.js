@@ -30,7 +30,7 @@ function extractTimeFromTR(dateString) {
 window.addEventListener("load", async () => {
     document.getElementById("tlDate").value = getTodayLocal();
     await loadShifts();
-    await loadStationsForTimeline();   // 🔥 YENİ EKLENDİ
+    await loadStationsForTimeline();
     await loadTimeline();
 });
 
@@ -59,7 +59,7 @@ async function loadShifts() {
 }
 
 /* ---------------------------------------------
-   İSTASYON YÜKLEME (Yeni)
+   İSTASYON YÜKLEME
 --------------------------------------------- */
 async function loadStationsForTimeline() {
     try {
@@ -89,25 +89,21 @@ async function loadTimeline() {
     try {
         const date = document.getElementById("tlDate").value;
         const shiftId = document.getElementById("tlShift").value;
-        const stationId = document.getElementById("tlStation").value; // 🔥 Yeni filtre
+        const stationId = document.getElementById("tlStation").value;
 
         if (!date) {
             alert("Lütfen tarih seç.");
             return;
         }
 
-        // 1) Assignment getir
         let url = `/assignments?date=${date}`;
-
         if (shiftId) url += `&shiftId=${shiftId}`;
-        if (stationId) url += `&stationId=${stationId}`; // 🔥 Yeni eklendi
+        if (stationId) url += `&stationId=${stationId}`;
 
         const assignments = await api(url);
-
-        // 2) Logları getir
         const logs = await api(`/nfc/logs?date=${date}`);
 
-        // 3) IN/OUT hesaplama
+        /* ---------- IN / OUT MAP ---------- */
         const scanMap = {};
 
         logs.forEach(l => {
@@ -117,10 +113,7 @@ async function loadTimeline() {
             const time = extractTimeFromTR(l.scannedAt);
 
             if (!scanMap[pid]) {
-                scanMap[pid] = {
-                    firstIn: "-",
-                    lastOut: "-"
-                };
+                scanMap[pid] = { firstIn: "-", lastOut: "-" };
             }
 
             if (l.type === "IN") {
@@ -136,13 +129,13 @@ async function loadTimeline() {
             }
         });
 
-        // 4) Tablo yazdır
+        /* ---------- TABLE ---------- */
         timelineCache = assignments;
         const tbody = document.getElementById("tlTable");
         tbody.innerHTML = "";
 
         if (!assignments.length) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-3">Kayıt yok.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3">Kayıt yok.</td></tr>`;
             return;
         }
 
@@ -169,7 +162,7 @@ async function loadTimeline() {
 }
 
 /* ---------------------------------------------
-   CSV EXPORT
+   CSV EXPORT (FK UYUMLU)
 --------------------------------------------- */
 function exportTimelineCsv() {
     if (!timelineCache.length) {
@@ -184,11 +177,11 @@ function exportTimelineCsv() {
         "Sıra No",
         "Adı",
         "Soyadı",
-        "Görev Tanımı",
+        "Departman",
         "Çalışılan Proje",
-        "Yapılan İşin Tanımı",
-        "Başlangıç Gün Saati",
-        "Bitiş Saati",
+        "Yapılan İş",
+        "Başlangıç",
+        "Bitiş",
         "Yevmiye",
         "Götürü"
     ]);
@@ -200,7 +193,6 @@ function exportTimelineCsv() {
             if (!l.personnel) return;
 
             const pid = l.personnel.id;
-
             const tarih = l.scannedAt.split("T")[0].split("-").reverse().join(".");
             const saat = extractTimeFromTR(l.scannedAt);
             const tam = `${tarih} ${saat}`;
@@ -232,13 +224,15 @@ function exportTimelineCsv() {
             const lastName = parts.pop() || "";
             const firstName = parts.join(" ") || "";
 
-            const scan = scanMap[pid] || { firstIn: "", lastOut: "" };
+            const scan = scanMap[pid] || {};
+            const department =
+                a.personnel?.departmentRel?.name || "";
 
             rows.push([
                 index++,
                 firstName,
                 lastName,
-                a.personnel?.department || "",
+                department,
                 "",
                 a.station?.name || "",
                 scan.firstIn || "",
@@ -249,7 +243,9 @@ function exportTimelineCsv() {
         });
 
         const csv = rows
-            .map(r => r.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";"))
+            .map(r =>
+                r.map(v => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";")
+            )
             .join("\r\n");
 
         const BOM = "\uFEFF";

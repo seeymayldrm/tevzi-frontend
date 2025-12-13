@@ -15,12 +15,11 @@ function getTodayLocal() {
 
 /* ---------------------------------------------
    🇹🇷 TR RAW LOG SAATİ (UTC DÖNÜŞÜM YOK)
-   "2025-12-09T01:08:40.000Z" → "09.12.2025 01:08"
 --------------------------------------------- */
 function formatTRDateTime(raw) {
-    const [datePart, timePart] = raw.split("T"); // ["2025-12-09", "01:08:40.000Z"]
-    const [hour, minute] = timePart.split(":"); // ["01","08","40.000Z"]
-    const [y, m, d] = datePart.split("-");      // ["2025","12","09"]
+    const [datePart, timePart] = raw.split("T");
+    const [hour, minute] = timePart.split(":");
+    const [y, m, d] = datePart.split("-");
 
     return `${d}.${m}.${y} ${hour}:${minute}`;
 }
@@ -29,7 +28,7 @@ function formatTRDateTime(raw) {
    SAYFA LOAD
 --------------------------------------------- */
 window.addEventListener("load", () => {
-    const today = getTodayLocal();   // 🔥 Artık TR bugün
+    const today = getTodayLocal();
     document.getElementById("logStart").value = today;
     document.getElementById("logEnd").value = today;
     loadLogs();
@@ -54,20 +53,26 @@ async function loadLogs() {
         tbody.innerHTML = "";
 
         if (!data.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3">Log bulunamadı.</td></tr>`;
+            tbody.innerHTML =
+                `<tr><td colspan="6" class="text-center py-3">Log bulunamadı.</td></tr>`;
             return;
         }
 
         data.forEach((l) => {
             const tr = document.createElement("tr");
+
+            // 🔥 FK → department name
+            const deptName = l.personnel?.departmentRel?.name || "-";
+
             tr.innerHTML = `
-                <td>${formatTRDateTime(l.scannedAt)}</td>  <!-- 🔥 DOĞRU SAAT -->
+                <td>${formatTRDateTime(l.scannedAt)}</td>
                 <td>${l.uid}</td>
                 <td>${l.type}</td>
                 <td>${l.personnel?.fullName || "-"}</td>
-                <td>${l.personnel?.department || "-"}</td>
+                <td>${deptName}</td>
                 <td>${l.source || "-"}</td>
             `;
+
             tbody.appendChild(tr);
         });
 
@@ -91,25 +96,30 @@ function exportLogsCsv() {
 
     logsCache.forEach((l) => {
         rows.push([
-            formatTRDateTime(l.scannedAt),   // 🔥 DOĞRU SAAT
+            formatTRDateTime(l.scannedAt),
             l.uid,
             l.type,
             l.personnel?.fullName || "",
-            l.personnel?.department || "",
+            // 🔥 FK → department name
+            l.personnel?.departmentRel?.name || "",
             l.source || "",
         ]);
     });
 
-    // 🔥 UTF-8 BOM EKLİYORUZ → Türkçe karakter %100 doğru görünür
+    // 🔥 UTF-8 BOM → Türkçe karakter garantisi
     const BOM = "\uFEFF";
 
     const csv = rows
         .map((r) =>
-            r.map((v) => `"${(v ?? "").toString().replace(/"/g, '""')}"`).join(";")
+            r.map((v) =>
+                `"${(v ?? "").toString().replace(/"/g, '""')}"`
+            ).join(";")
         )
         .join("\r\n");
 
-    const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([BOM + csv], {
+        type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

@@ -4,6 +4,7 @@ let scanList = [];
 let filteredScanList = [];
 
 let selectedPersonnelIds = new Set();
+let assignedPersonnelIds = new Set();
 
 window.addEventListener("load", async () => {
 
@@ -15,24 +16,14 @@ window.addEventListener("load", async () => {
     const clogo = localStorage.getItem("companyLogo");
     const cfavicon = localStorage.getItem("companyFavicon");
 
-    // Şirket adı
-    const companyNameEl = document.getElementById("companyName");
-    if (companyNameEl && cname) {
-        companyNameEl.innerText = cname;
-    }
+    if (document.getElementById("companyName") && cname)
+        document.getElementById("companyName").innerText = cname;
 
-    // Logo
-    const companyLogoEl = document.getElementById("companyLogo");
-    if (companyLogoEl && clogo) {
-        companyLogoEl.src = clogo;
-    }
+    if (document.getElementById("companyLogo") && clogo)
+        document.getElementById("companyLogo").src = clogo;
 
-    // Favicon
-    const faviconEl = document.getElementById("faviconTag");
-    if (faviconEl && cfavicon) {
-        faviconEl.href = cfavicon;
-    }
-
+    if (document.getElementById("faviconTag") && cfavicon)
+        document.getElementById("faviconTag").href = cfavicon;
 
     /* -----------------------------------------
        SENİN ESKİ LOAD İŞLEMLERİN
@@ -54,10 +45,7 @@ window.addEventListener("load", async () => {
 ----------------------------------------- */
 function todayISO() {
     const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /* -----------------------------------------
@@ -83,7 +71,8 @@ async function loadScanList() {
         tbody.innerHTML = "";
 
         if (!logs.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-2">Bugün kart okutan personel yok.</td></tr>`;
+            tbody.innerHTML =
+                `<tr><td colspan="4" class="text-center py-2">Bugün kart okutan personel yok.</td></tr>`;
             return;
         }
 
@@ -98,6 +87,10 @@ async function loadScanList() {
 
             map.set(l.personnel.id, {
                 ...l.personnel,
+
+                // 🔥 FK → departman adı
+                departmentName: l.personnel.departmentRel?.name || "-",
+
                 entryTime: entry ? entry.scannedAt.slice(11, 16) : "-"
             });
         });
@@ -119,7 +112,7 @@ function applyFilters() {
 
     filteredScanList = scanList.filter(p =>
         p.fullName.toLowerCase().includes(nameF) &&
-        (p.department || "-").toLowerCase().includes(deptF)
+        (p.departmentName || "-").toLowerCase().includes(deptF)
     );
 
     renderScanTable();
@@ -133,7 +126,8 @@ function renderScanTable() {
     tbody.innerHTML = "";
 
     if (!filteredScanList.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-2 text-center">Sonuç bulunamadı.</td></tr>`;
+        tbody.innerHTML =
+            `<tr><td colspan="4" class="py-2 text-center">Sonuç bulunamadı.</td></tr>`;
         return;
     }
 
@@ -143,19 +137,17 @@ function renderScanTable() {
         const isAssigned = assignedPersonnelIds.has(p.id);
         const isSelected = selectedPersonnelIds.has(p.id);
 
-        const checked = (!isAssigned && isSelected) ? "checked" : "";
-        const disabled = isAssigned ? "disabled" : "";
-        const rowClass = isAssigned ? "assigned-row" : "";
-
-        tr.className = rowClass;
+        tr.className = isAssigned ? "assigned-row" : "";
 
         tr.innerHTML = `
             <td>
-                <input type="checkbox" ${checked} ${disabled}
+                <input type="checkbox"
+                    ${(!isAssigned && isSelected) ? "checked" : ""}
+                    ${isAssigned ? "disabled" : ""}
                     onchange="toggleSelect(${p.id}, this)">
             </td>
             <td>${p.fullName}</td>
-            <td>${p.department || "-"}</td>
+            <td>${p.departmentName}</td>
             <td>${p.entryTime}</td>
         `;
 
@@ -167,8 +159,9 @@ function renderScanTable() {
    1.3) Tekli seçim
 ----------------------------------------- */
 function toggleSelect(id, checkbox) {
-    if (checkbox.checked) selectedPersonnelIds.add(id);
-    else selectedPersonnelIds.delete(id);
+    checkbox.checked
+        ? selectedPersonnelIds.add(id)
+        : selectedPersonnelIds.delete(id);
 }
 
 /* -----------------------------------------
@@ -192,11 +185,10 @@ function clearAllSelected() {
 }
 
 /* -----------------------------------------
-   1.6) Header checkbox select
+   1.6) Header checkbox
 ----------------------------------------- */
 function toggleSelectAll(checkbox) {
-    if (checkbox.checked) selectAllFiltered();
-    else clearAllSelected();
+    checkbox.checked ? selectAllFiltered() : clearAllSelected();
 }
 
 /* -----------------------------------------
@@ -217,7 +209,7 @@ async function loadStations() {
             select.appendChild(opt);
         });
 
-    } catch (err) {
+    } catch {
         alert("İstasyon listesi alınamadı!");
     }
 }
@@ -227,92 +219,80 @@ async function loadStations() {
 ----------------------------------------- */
 async function loadTodayAssignments() {
     try {
-        const date = todayISO();
-        const data = await api(`/assignments?date=${date}`);
+        const data = await api(`/assignments?date=${todayISO()}`);
 
         assignmentsCache = data;
         assignedPersonnelIds = new Set(data.map(a => a.personnelId));
 
         selectedPersonnelIds.forEach(id => {
-            if (assignedPersonnelIds.has(id)) {
-                selectedPersonnelIds.delete(id);
-            }
+            if (assignedPersonnelIds.has(id)) selectedPersonnelIds.delete(id);
         });
 
         const tbody = document.getElementById("assignmentTable");
         tbody.innerHTML = "";
 
         if (!data.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>`;
+            tbody.innerHTML =
+                `<tr><td colspan="5" class="py-3 text-center">Bugün iş yok.</td></tr>`;
             await loadScanList();
             return;
         }
 
         data.forEach(a => {
-            const tr = document.createElement("tr");
-
-            tr.innerHTML = `
-                <td>${a.personnel?.fullName || "-"}</td>
-                <td>${a.station?.name || "-"}</td>
-                <td>${a.startTime || "-"}</td>
-                <td>${a.endTime || "-"}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-danger"
-                        onclick="deleteAssignment(${a.id})">Sil</button>
-                </td>
+            tbody.innerHTML += `
+                <tr>
+                    <td>${a.personnel?.fullName || "-"}</td>
+                    <td>${a.station?.name || "-"}</td>
+                    <td>${a.startTime || "-"}</td>
+                    <td>${a.endTime || "-"}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteAssignment(${a.id})">Sil</button>
+                    </td>
+                </tr>
             `;
-
-            tbody.appendChild(tr);
         });
 
         await loadScanList();
 
-    } catch (err) {
+    } catch {
         alert("İş atamaları alınamadı.");
     }
 }
 
 /* -----------------------------------------
-   4) İŞ ATA (çoklu)
+   4) İŞ ATA
 ----------------------------------------- */
 async function assignJob() {
-    try {
-        if (selectedPersonnelIds.size === 0) {
-            alert("Lütfen en az bir personel seçin!");
-            return;
-        }
-
-        const stationId = Number(document.getElementById("stationSelect").value);
-        const shiftId = 1;
-
-        const start = document.getElementById("startTime").value;
-        const end = document.getElementById("endTime").value;
-
-        for (let id of selectedPersonnelIds) {
-            if (assignedPersonnelIds.has(id)) continue;
-
-            const body = {
-                date: todayISO(),
-                shiftId,
-                stationId,
-                personnelId: id,
-                startTime: start,
-                endTime: end
-            };
-
-            await api("/assignments", "POST", body);
-        }
-
-        alert("İş ataması tamamlandı!");
-
-        selectedPersonnelIds.clear();
-
-        await loadTodayAssignments();
-        await loadScanList();
-
-    } catch (err) {
-        alert("İş atanamadı.");
+    if (!selectedPersonnelIds.size) {
+        alert("Lütfen en az bir personel seçin!");
+        return;
     }
+
+    const stationId = Number(document.getElementById("stationSelect").value);
+    const shiftId = 1;
+
+    const start = document.getElementById("startTime").value;
+    const end = document.getElementById("endTime").value;
+
+    for (let id of selectedPersonnelIds) {
+        if (assignedPersonnelIds.has(id)) continue;
+
+        await api("/assignments", "POST", {
+            date: todayISO(),
+            shiftId,
+            stationId,
+            personnelId: id,
+            startTime: start,
+            endTime: end
+        });
+    }
+
+    alert("İş ataması tamamlandı!");
+    selectedPersonnelIds.clear();
+
+    await loadTodayAssignments();
+    await loadScanList();
 }
 
 /* -----------------------------------------
@@ -322,6 +302,5 @@ async function deleteAssignment(id) {
     if (!confirm("Silinsin mi?")) return;
 
     await api(`/assignments/${id}`, "DELETE");
-
     await loadTodayAssignments();
 }
