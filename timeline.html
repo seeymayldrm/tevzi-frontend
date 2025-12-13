@@ -6,7 +6,8 @@
     <title>Zaman Çizelgesi | Tevzi Panel</title>
 
     <!-- 🔥 Dinamik favicon -->
-    <link id="dynamicFavicon" rel="icon" type="image/png" href="">
+    <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
+
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -103,27 +104,9 @@
     <script src="js/app.js"></script>
     <script src="js/api.js"></script>
     <script src="js/timeline.js"></script>
-    <!-- 🔥 Dinamik Branding Script -->
-    <script>
-        async function loadCompanyBranding() {
-            try {
-                const branding = await api("/companies/my");
+    <script src="js/company-branding.js"></script>
 
-                if (branding.companyName)
-                    document.getElementById("companyName").textContent = branding.companyName;
 
-                if (branding.logoUrl)
-                    document.getElementById("companyLogo").src = branding.logoUrl;
-
-                if (branding.faviconUrl)
-                    document.getElementById("dynamicFavicon").href = branding.faviconUrl;
-
-            } catch (err) {
-                console.error("Branding yüklenemedi:", err);
-            }
-        }
-        loadCompanyBranding();
-    </script>
 </body>
 
 </html>
