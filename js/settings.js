@@ -40,7 +40,7 @@ async function loadStations() {
 async function addStation() {
     const name = document.getElementById("stName").value.trim();
     const code = document.getElementById("stCode").value.trim();
-    const dept = document.getElementById("stDept").value.trim();
+    const dept = document.getElementById("stDept").value;
 
     if (!name || !code) {
         alert("Ad ve kod zorunlu.");
@@ -104,14 +104,20 @@ async function saveEdit() {
    DEPARTMENT YÖNETİMİ
 ===================================================== */
 
-/* 6) DEPARTMAN LİSTELEME */
+/* 6) DEPARTMAN LİSTELEME + DROPDOWN DOLDURMA */
 async function loadDepartments() {
     const departments = await api("/departments?active=true");
 
+    /* TABLO */
     const tbody = document.getElementById("departmentsTable");
     tbody.innerHTML = "";
 
+    /* DROPDOWN */
+    const deptSelect = document.getElementById("stDept");
+    deptSelect.innerHTML = `<option value="">Departman seç (opsiyonel)</option>`;
+
     departments.forEach(dep => {
+        // tablo
         tbody.innerHTML += `
             <tr>
                 <td>${dep.id}</td>
@@ -124,6 +130,13 @@ async function loadDepartments() {
                     </button>
                 </td>
             </tr>
+        `;
+
+        // dropdown
+        deptSelect.innerHTML += `
+            <option value="${dep.name}">
+                ${dep.name}
+            </option>
         `;
     });
 }
