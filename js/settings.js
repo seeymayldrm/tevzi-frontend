@@ -101,7 +101,7 @@ async function saveEdit() {
 }
 
 /* =====================================================
-   DEPARTMENT YÖNETİMİ (YENİ)
+   DEPARTMENT YÖNETİMİ
 ===================================================== */
 
 /* 6) DEPARTMAN LİSTELEME */
@@ -116,6 +116,7 @@ async function loadDepartments() {
             <tr>
                 <td>${dep.id}</td>
                 <td>${dep.name}</td>
+                <td>${dep.isActive ? "Aktif" : "Pasif"}</td>
                 <td>
                     <button class="btn btn-sm btn-danger"
                         onclick="deleteDepartment(${dep.id})">
