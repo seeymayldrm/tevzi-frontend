@@ -6,7 +6,6 @@
     <title>Kart Yönetimi | Tevzi Panel</title>
     <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
 
-
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -22,6 +21,7 @@
                 <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
                 <img id="companyLogo" src="assets/logo.png" alt="Logo">
             </div>
+
             <a href="dashboard.html">Dashboard</a>
             <a href="tevzi.html">İş Atama</a>
             <a href="timeline.html">Zaman Çizelgesi</a>
@@ -35,29 +35,26 @@
 
         <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
+
             <h3 class="fw-bold mb-4">Kart Yönetimi</h3>
 
-            <!-- FİLTRE BÖLÜMÜ -->
+            <!-- FİLTRE -->
             <div class="card mb-3">
                 <div class="card-body row g-3">
-
                     <div class="col-md-4">
-                        <input id="filterUID" type="text" class="form-control" placeholder="Kart UID">
+                        <input id="filterUID" class="form-control" placeholder="Kart UID">
                     </div>
-
                     <div class="col-md-4">
-                        <input id="filterPerson" type="text" class="form-control" placeholder="Personel Adı">
+                        <input id="filterPerson" class="form-control" placeholder="Personel Adı">
                     </div>
-
                     <div class="col-md-3">
-                        <select id="filterStatus" class="form-control">
+                        <select id="filterStatus" class="form-select">
                             <option value="">Tümü</option>
                             <option value="active">Aktif</option>
                             <option value="passive">Pasif</option>
                             <option value="empty">Boş Kartlar</option>
                         </select>
                     </div>
-
                     <div class="col-md-1">
                         <button class="btn btn-primary w-100" onclick="loadCards()">Filtrele</button>
                     </div>
@@ -65,29 +62,31 @@
             </div>
 
             <!-- TABLO -->
-            <div class="card">
+            <div class="card" id="cardCard">
                 <div class="card-header fw-bold">Kart Listesi</div>
 
                 <div class="card-body p-0">
-                    <table class="table table-striped m-0">
-                        <thead>
-                            <tr>
-                                <th>UID</th>
-                                <th>Personel</th>
-                                <th>Bölüm</th>
-                                <th>Durum</th>
-                                <th style="width:160px">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cardTable"></tbody>
-                    </table>
+                    <div data-ui-slot>
+                        <table class="table table-striped m-0">
+                            <thead>
+                                <tr>
+                                    <th>UID</th>
+                                    <th>Personel</th>
+                                    <th>Bölüm</th>
+                                    <th>Durum</th>
+                                    <th style="width:160px">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cardTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
-
-    <!-- MODAL: DÜZENLE -->
+    <!-- MODAL -->
     <div class="modal fade" id="editCardModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -101,13 +100,13 @@
                     <input type="hidden" id="editCardId">
 
                     <label class="form-label">Kart UID</label>
-                    <input id="editUID" class="form-control mb-3" readonly>
+                    <input id="editUID" class="form-control mb-2" readonly>
 
                     <label class="form-label">Personel</label>
-                    <select id="editPersonnel" class="form-control mb-3"></select>
+                    <select id="editPersonnel" class="form-select mb-2"></select>
 
                     <label class="form-label">Durum</label>
-                    <select id="editStatus" class="form-control mb-3">
+                    <select id="editStatus" class="form-select">
                         <option value="true">Aktif</option>
                         <option value="false">Pasif</option>
                     </select>
@@ -123,13 +122,13 @@
         </div>
     </div>
 
-
+    <!-- SCRIPTS -->
     <script src="js/app.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/card-management.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/company-branding.js"></script>
-
 
 </body>
 

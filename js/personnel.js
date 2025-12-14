@@ -31,7 +31,7 @@ async function loadDepartments() {
         const edit = document.getElementById("editDept");
 
         if (filter) {
-            filter.innerHTML = `<option value="">Tümü</option>`;
+            filter.innerHTML = `<option value="">Tüm Departmanlar</option>`;
             departments.forEach(d => {
                 filter.innerHTML += `<option value="${d.id}">${d.name}</option>`;
             });

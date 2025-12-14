@@ -1,172 +1,178 @@
 let editCardModal;
 let allPersonnel = [];
 
+/* =========================
+   INIT
+========================= */
 window.addEventListener("load", async () => {
     editCardModal = new bootstrap.Modal(
         document.getElementById("editCardModal")
     );
 
-    await loadPersonnelList();  // Modal için personel listesi
-    loadCards();                // Kartları yükle
+    showLoading("#cardCard", "Kartlar yükleniyor...");
+
+    try {
+        await loadPersonnelList();
+        await loadCards(true);
+        showToast("Kart listesi yüklendi", "success");
+    } catch (err) {
+        console.error(err);
+        showError("#cardCard", "Kart verileri alınamadı");
+    }
 });
 
-/* ---------------------------------------------------
-   PERSONEL LİSTESİ (Modal için)
---------------------------------------------------- */
+/* =========================
+   PERSONEL (MODAL)
+========================= */
 async function loadPersonnelList() {
-    allPersonnel = await api("/personnel?active=true");
+    const data = await api("/personnel?active=true");
+    allPersonnel = data;
 
     const select = document.getElementById("editPersonnel");
     select.innerHTML = `<option value="">— Boş Kart —</option>`;
 
-    allPersonnel.forEach(p => {
-        select.innerHTML += `
-            <option value="${p.id}">
-                ${p.fullName}
-            </option>`;
+    data.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.fullName}</option>`;
     });
 }
 
-/* ---------------------------------------------------
-   KARTLARI LİSTELE
---------------------------------------------------- */
-async function loadCards() {
-    const uidFilter = document
-        .getElementById("filterUID")
-        .value.trim()
-        .toLowerCase();
+/* =========================
+   KARTLAR
+========================= */
+async function loadCards(isInitial = false) {
+    if (!isInitial) {
+        showLoading("#cardCard", "Filtreleniyor...");
+    }
 
-    const personFilter = document
-        .getElementById("filterPerson")
-        .value.trim()
-        .toLowerCase();
+    try {
+        const uid = document.getElementById("filterUID").value.toLowerCase();
+        const person = document.getElementById("filterPerson").value.toLowerCase();
+        const status = document.getElementById("filterStatus").value;
 
-    const statusFilter = document.getElementById("filterStatus").value;
+        const data = await api("/nfc/cards");
 
-    const data = await api("/nfc/cards");
+        restoreContent("#cardCard");
 
-    const tbody = document.getElementById("cardTable");
-    tbody.innerHTML = "";
+        const tbody = document.getElementById("cardTable");
+        tbody.innerHTML = "";
 
-    const filtered = data.filter(card => {
-        const personName =
-            card.personnel?.fullName?.toLowerCase() || "";
+        const filtered = data.filter(card => {
+            const personName = card.personnel?.fullName?.toLowerCase() || "";
+            const empty = !card.personnelId;
 
-        const isEmpty = !card.personnelId;
+            if (uid && !card.uid.toLowerCase().includes(uid)) return false;
+            if (person && !personName.includes(person)) return false;
+            if (status === "active" && !card.isActive) return false;
+            if (status === "passive" && card.isActive) return false;
+            if (status === "empty" && !empty) return false;
 
-        if (uidFilter && !card.uid.toLowerCase().includes(uidFilter))
-            return false;
+            return true;
+        });
 
-        if (personFilter && !personName.includes(personFilter))
-            return false;
+        if (!filtered.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Kayıt bulunamadı
+                    </td>
+                </tr>`;
+            return;
+        }
 
-        if (statusFilter === "active" && !card.isActive)
-            return false;
+        filtered.forEach(card => {
+            const dept = card.personnel?.departmentRel?.name || "—";
+            const personName = card.personnel?.fullName || "—";
 
-        if (statusFilter === "passive" && card.isActive)
-            return false;
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge bg-primary">${card.uid}</span></td>
+                    <td>${personName}</td>
+                    <td>${dept}</td>
+                    <td>
+                        ${card.isActive
+                    ? `<span class="badge bg-success">Aktif</span>`
+                    : `<span class="badge bg-secondary">Pasif</span>`
+                }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1"
+                            onclick="openEditModal(${card.id}, '${card.uid}', ${card.personnelId}, ${card.isActive})">
+                            Düzenle
+                        </button>
+                        <button class="btn btn-sm btn-danger"
+                            onclick="deleteCard(${card.id})">
+                            Sil
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
 
-        if (statusFilter === "empty" && !isEmpty)
-            return false;
-
-        return true;
-    });
-
-    filtered.forEach(card => {
-        const person = card.personnel
-            ? card.personnel.fullName
-            : "—";
-
-        // ✅ FK → departmentRel.name (KRİTİK DÜZELTME)
-        const dept = card.personnel?.departmentRel?.name || "—";
-
-        const statusBadge = card.isActive
-            ? `<span class="badge bg-success">Aktif</span>`
-            : `<span class="badge bg-secondary">Pasif</span>`;
-
-        tbody.innerHTML += `
-        <tr>
-            <td>
-                <span class="badge bg-primary">${card.uid}</span>
-            </td>
-            <td>${person}</td>
-            <td>${dept}</td>
-            <td>${statusBadge}</td>
-
-            <td style="white-space: nowrap;">
-                <button class="btn btn-sm btn-warning me-1"
-                    onclick="openEditModal(
-                        ${card.id},
-                        '${card.uid}',
-                        ${card.personnelId},
-                        ${card.isActive}
-                    )">
-                    Düzenle
-                </button>
-
-                <button class="btn btn-sm btn-danger"
-                    onclick="deleteCard(${card.id})">
-                    Sil
-                </button>
-            </td>
-        </tr>`;
-    });
+    } catch (err) {
+        console.error(err);
+        showError("#cardCard", "Kartlar alınamadı");
+    }
 }
 
-/* ---------------------------------------------------
-   MODALI AÇ
---------------------------------------------------- */
+/* =========================
+   MODAL
+========================= */
 function openEditModal(id, uid, personnelId, isActive) {
-    document.getElementById("editCardId").value = id;
-    document.getElementById("editUID").value = uid;
-    document.getElementById("editStatus").value = isActive ? "true" : "false";
-
-    const select = document.getElementById("editPersonnel");
-    select.value = personnelId ? String(personnelId) : "";
-
+    editCardId.value = id;
+    editUID.value = uid;
+    editStatus.value = isActive ? "true" : "false";
+    editPersonnel.value = personnelId ? String(personnelId) : "";
     editCardModal.show();
 }
 
-/* ---------------------------------------------------
-   KARTI KAYDET
---------------------------------------------------- */
+/* =========================
+   SAVE
+========================= */
 async function saveCard() {
-    const id = document.getElementById("editCardId").value;
-    const isActive =
-        document.getElementById("editStatus").value === "true";
+    try {
+        await api(`/nfc/cards/${editCardId.value}`, "PUT", {
+            isActive: editStatus.value === "true",
+            personnelId: editPersonnel.value || null
+        });
 
-    const personnelId =
-        document.getElementById("editPersonnel").value || null;
+        editCardModal.hide();
+        showToast("Kart güncellendi", "success");
+        loadCards();
 
-    await api(`/nfc/cards/${id}`, "PUT", {
-        isActive,
-        personnelId: personnelId ? Number(personnelId) : null
-    });
-
-    editCardModal.hide();
-    loadCards();
+    } catch {
+        showToast("Kart güncellenemedi", "danger");
+    }
 }
 
-/* ---------------------------------------------------
-   KARTI BOŞA ÇIKAR
---------------------------------------------------- */
+/* =========================
+   CLEAR OWNER
+========================= */
 async function clearCardOwner() {
-    const id = document.getElementById("editCardId").value;
+    try {
+        await api(`/nfc/cards/${editCardId.value}`, "PUT", {
+            personnelId: null
+        });
 
-    await api(`/nfc/cards/${id}`, "PUT", {
-        personnelId: null
-    });
+        editCardModal.hide();
+        showToast("Kart boşa çıkarıldı", "warning");
+        loadCards();
 
-    editCardModal.hide();
-    loadCards();
+    } catch {
+        showToast("İşlem başarısız", "danger");
+    }
 }
 
-/* ---------------------------------------------------
-   KART SİL
---------------------------------------------------- */
+/* =========================
+   DELETE
+========================= */
 async function deleteCard(id) {
-    if (!confirm("Bu kartı silmek istiyor musun?")) return;
+    if (!confirm("Bu kart silinsin mi?")) return;
 
-    await api(`/nfc/cards/${id}`, "DELETE");
-    loadCards();
+    try {
+        await api(`/nfc/cards/${id}`, "DELETE");
+        showToast("Kart silindi", "warning");
+        loadCards();
+    } catch {
+        showToast("Silme başarısız", "danger");
+    }
 }
