@@ -3,132 +3,137 @@ let departmentsCache = [];
 
 window.addEventListener("load", async () => {
     editModal = new bootstrap.Modal(document.getElementById("editModal"));
-    await loadDepartments();
-    await loadPersonnel();
+
+    showLoading("#personnelCard", "Personel listesi yükleniyor...");
+
+    try {
+        await loadDepartments();
+        await loadPersonnel();
+        restoreContent("#personnelCard");
+        showToast("Personel listesi yüklendi", "success");
+    } catch (err) {
+        console.error(err);
+        showError("#personnelCard", "Personel verileri alınamadı");
+    }
 });
 
-/* =====================================================
-   DEPARTMANLARI YÜKLE (Dropdown için)
-===================================================== */
+/* =========================
+   DEPARTMANLAR
+========================= */
 async function loadDepartments() {
-    const departments = await api("/departments?active=true");
-    departmentsCache = departments;
+    try {
+        const departments = await api("/departments?active=true");
+        departmentsCache = departments;
 
-    const filterSelect = document.getElementById("filterDept");
-    const editSelect = document.getElementById("editDept");
+        const filter = document.getElementById("filterDept");
+        const edit = document.getElementById("editDept");
 
-    if (filterSelect) {
-        filterSelect.innerHTML = `<option value="">Tümü</option>`;
+        filter.innerHTML = `<option value="">Tümü</option>`;
+        edit.innerHTML = `<option value="">Seçiniz</option>`;
+
         departments.forEach(d => {
-            filterSelect.innerHTML += `
-                <option value="${d.id}">${d.name}</option>
-            `;
+            filter.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            edit.innerHTML += `<option value="${d.id}">${d.name}</option>`;
         });
-    }
-
-    if (editSelect) {
-        editSelect.innerHTML = `<option value="">Seçiniz</option>`;
-        departments.forEach(d => {
-            editSelect.innerHTML += `
-                <option value="${d.id}">${d.name}</option>
-            `;
-        });
+    } catch {
+        showToast("Departmanlar yüklenemedi", "danger");
     }
 }
 
-/* =====================================================
-   PERSONEL LİSTELEME
-===================================================== */
+/* =========================
+   PERSONEL
+========================= */
 async function loadPersonnel() {
-    const name = document.getElementById("filterName")?.value.trim().toLowerCase() || "";
-    const deptId = document.getElementById("filterDept")?.value || "";
+    showLoading("#personnelCard", "Filtreleniyor...");
 
-    const data = await api("/personnel?active=true");
+    try {
+        const name = document.getElementById("filterName").value.toLowerCase();
+        const deptId = document.getElementById("filterDept").value;
 
-    const tbody = document.getElementById("personnelTable");
-    tbody.innerHTML = "";
+        const data = await api("/personnel?active=true");
+        const tbody = document.getElementById("personnelTable");
+        tbody.innerHTML = "";
 
-    // FE filtreleme
-    const filtered = data.filter(p => {
-        const matchesName = p.fullName.toLowerCase().includes(name);
-        const matchesDept =
-            !deptId || String(p.departmentId) === String(deptId);
-        return matchesName && matchesDept;
-    });
+        const filtered = data.filter(p => {
+            return (
+                p.fullName.toLowerCase().includes(name) &&
+                (!deptId || String(p.departmentId) === deptId)
+            );
+        });
 
-    filtered.forEach((p, index) => {
-        const activeCard = p.cards?.find(c => c.isActive);
-        const deptName = p.departmentRel?.name || "-";
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        Kayıt bulunamadı
+                    </td>
+                </tr>`;
+            restoreContent("#personnelCard");
+            return;
+        }
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${p.fullName}</td>
-            <td>${deptName}</td>
-            <td>${p.title || "-"}</td>
-            <td>
-                ${activeCard
-                ? `<span class="badge bg-primary">${activeCard.uid}</span>`
-                : "Kart Yok"}
-            </td>
-            <td style="white-space: nowrap;">
-                <button class="btn btn-sm btn-warning me-1"
-                    onclick="openEditModal(
-                        ${p.id},
-                        '${p.fullName.replace(/'/g, "\\'")}',
-                        '${p.departmentId || ""}',
-                        '${p.title || ""}'
-                    )">
-                    Düzenle
-                </button>
+        filtered.forEach((p, i) => {
+            const card = p.cards?.find(c => c.isActive);
+            tbody.innerHTML += `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${p.fullName}</td>
+                    <td>${p.departmentRel?.name || "-"}</td>
+                    <td>${p.title || "-"}</td>
+                    <td>${card ? `<span class="badge bg-primary">${card.uid}</span>` : "Kart Yok"}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1"
+                            onclick="openEditModal(${p.id}, '${p.fullName.replace(/'/g, "\\'")}', '${p.departmentId || ""}', '${p.title || ""}')">
+                            Düzenle
+                        </button>
+                        <button class="btn btn-sm btn-danger"
+                            onclick="deletePersonnel(${p.id})">
+                            Sil
+                        </button>
+                    </td>
+                </tr>`;
+        });
 
-                <button class="btn btn-sm btn-danger"
-                    onclick="deletePersonnel(${p.id})">
-                    Sil
-                </button>
-            </td>
-        </tr>`;
-    });
+        restoreContent("#personnelCard");
+    } catch (err) {
+        console.error(err);
+        showError("#personnelCard", "Personel listesi alınamadı");
+    }
 }
 
-/* =====================================================
-   DÜZENLEME MODALI
-===================================================== */
-function openEditModal(id, fullName, departmentId, title) {
-    document.getElementById("editId").value = id;
-    document.getElementById("editName").value = fullName;
-    document.getElementById("editDept").value = departmentId;
-    document.getElementById("editTitle").value = title;
-
+/* =========================
+   MODAL / CRUD
+========================= */
+function openEditModal(id, name, dept, title) {
+    editId.value = id;
+    editName.value = name;
+    editDept.value = dept;
+    editTitle.value = title;
     editModal.show();
 }
 
-/* =====================================================
-   KAYDET
-===================================================== */
 async function saveEdit() {
-    const id = document.getElementById("editId").value;
-    const fullName = document.getElementById("editName").value.trim();
-    const departmentId = document.getElementById("editDept").value || null;
-    const title = document.getElementById("editTitle").value.trim();
-
-    await api(`/personnel/${id}`, "PUT", {
-        fullName,
-        departmentId,
-        title
-    });
-
-    editModal.hide();
-    loadPersonnel();
+    try {
+        await api(`/personnel/${editId.value}`, "PUT", {
+            fullName: editName.value,
+            departmentId: editDept.value || null,
+            title: editTitle.value
+        });
+        editModal.hide();
+        showToast("Personel güncellendi", "success");
+        loadPersonnel();
+    } catch {
+        showToast("Güncelleme başarısız", "danger");
+    }
 }
 
-/* =====================================================
-   PERSONEL SİL
-===================================================== */
-function deletePersonnel(id) {
-    if (!confirm("Bu personeli silmek istiyor musun?")) return;
-
-    api(`/personnel/${id}`, "DELETE")
-        .then(loadPersonnel)
-        .catch(err => alert("Silme hatası: " + err.message));
+async function deletePersonnel(id) {
+    if (!confirm("Bu personel silinsin mi?")) return;
+    try {
+        await api(`/personnel/${id}`, "DELETE");
+        showToast("Personel silindi", "warning");
+        loadPersonnel();
+    } catch {
+        showToast("Silme işlemi başarısız", "danger");
+    }
 }
