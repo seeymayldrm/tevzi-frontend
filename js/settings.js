@@ -21,13 +21,9 @@ async function loadStations() {
                 <td>${st.departmentRel?.name || "-"}</td>
                 <td>
                     <button class="btn btn-sm btn-warning"
-                        onclick="openEdit(${st.id})">
-                        Düzenle
-                    </button>
+                        onclick="openEdit(${st.id})">Düzenle</button>
                     <button class="btn btn-sm btn-danger"
-                        onclick="deleteStation(${st.id})">
-                        Sil
-                    </button>
+                        onclick="deleteStation(${st.id})">Sil</button>
                 </td>
             </tr>
         `;
@@ -35,19 +31,13 @@ async function loadStations() {
 }
 
 async function addStation() {
-    const name = stName.value.trim();
-    const code = stCode.value.trim();
-    const departmentId = stDept.value || null;
-
-    if (!name || !code) {
-        alert("Ad ve kod zorunlu");
-        return;
-    }
+    if (!stName.value.trim() || !stCode.value.trim())
+        return alert("Ad ve kod zorunlu");
 
     await api("/stations", "POST", {
-        name,
-        code,
-        departmentId: departmentId ? Number(departmentId) : null
+        name: stName.value.trim(),
+        code: stCode.value.trim(),
+        departmentId: stDept.value || null
     });
 
     stName.value = "";
@@ -71,9 +61,7 @@ async function openEdit(id) {
 }
 
 async function saveEdit() {
-    const id = editId.value;
-
-    await api(`/stations/${id}`, "PUT", {
+    await api(`/stations/${editId.value}`, "PUT", {
         name: editName.value.trim(),
         code: editCode.value.trim(),
         departmentId: editDept.value || null
@@ -94,7 +82,7 @@ async function deleteStation(id) {
 ====================== */
 
 async function loadDepartments() {
-    const deps = await api("/departments");
+    const deps = await api("/departments?active=true");
 
     const tbody = document.getElementById("departmentsTable");
     const stSelect = document.getElementById("stDept");
@@ -109,10 +97,9 @@ async function loadDepartments() {
             <tr>
                 <td>${i + 1}</td>
                 <td>${d.name}</td>
-                <td>${d.isActive ? "Aktif" : "Pasif"}</td>
                 <td>
                     <button class="btn btn-sm btn-warning"
-                        onclick="editDepartment(${d.id}, '${d.name}')">
+                        onclick="openDepartmentEdit(${d.id}, '${d.name}')">
                         Düzenle
                     </button>
                     <button class="btn btn-sm btn-danger"
@@ -123,31 +110,32 @@ async function loadDepartments() {
             </tr>
         `;
 
-        if (d.isActive) {
-            stSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-            editSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-        }
+        stSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+        editSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
     });
 }
 
 async function addDepartment() {
-    const name = depName.value.trim();
-    if (!name) return alert("Departman adı zorunlu");
+    if (!depName.value.trim()) return alert("Departman adı zorunlu");
 
-    await api("/departments", "POST", { name });
+    await api("/departments", "POST", { name: depName.value.trim() });
     depName.value = "";
     loadDepartments();
 }
 
-async function editDepartment(id, currentName) {
-    const newName = prompt("Yeni departman adı", currentName);
-    if (!newName) return;
+function openDepartmentEdit(id, name) {
+    editDepId.value = id;
+    editDepName.value = name;
+    new bootstrap.Modal(editDepartmentModal).show();
+}
 
-    await api(`/departments/${id}`, "PUT", {
-        name: newName.trim()
+async function saveDepartmentEdit() {
+    await api(`/departments/${editDepId.value}`, "PUT", {
+        name: editDepName.value.trim()
     });
 
     loadDepartments();
+    bootstrap.Modal.getInstance(editDepartmentModal).hide();
 }
 
 async function deleteDepartment(id) {

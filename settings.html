@@ -122,7 +122,6 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Ad</th>
-                                        <th>Durum</th>
                                         <th width="140">İşlem</th>
                                     </tr>
                                 </thead>
@@ -163,6 +162,32 @@
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
                     <button class="btn btn-primary" onclick="saveEdit()">Kaydet</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- DEPARTMAN DÜZENLE MODAL -->
+    <div class="modal fade" id="editDepartmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Departman Düzenle</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="editDepId">
+
+                    <label>Departman Adı</label>
+                    <input id="editDepName" class="form-control">
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button class="btn btn-primary" onclick="saveDepartmentEdit()">Kaydet</button>
                 </div>
 
             </div>
