@@ -1,6 +1,8 @@
 /* =========================
-   UI HELPERS (SAFE)
+   UI HELPERS (SAFE + RESTORE)
 ========================= */
+
+const uiCache = new Map();
 
 function getSlot(selector) {
     const el = document.querySelector(selector);
@@ -12,12 +14,27 @@ function showLoading(selector, message = "Yükleniyor...") {
     const slot = getSlot(selector);
     if (!slot) return;
 
+    // 🔐 ORİJİNAL İÇERİĞİ SAKLA
+    if (!uiCache.has(selector)) {
+        uiCache.set(selector, slot.innerHTML);
+    }
+
     slot.innerHTML = `
         <div class="text-center py-4 text-muted">
             <div class="spinner-border mb-2" role="status"></div>
             <div>${message}</div>
         </div>
     `;
+}
+
+function restoreContent(selector) {
+    const slot = getSlot(selector);
+    if (!slot) return;
+
+    if (uiCache.has(selector)) {
+        slot.innerHTML = uiCache.get(selector);
+        uiCache.delete(selector);
+    }
 }
 
 function showError(selector, message) {

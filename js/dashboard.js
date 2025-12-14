@@ -121,3 +121,25 @@ function updateScanCount() {
 
     el.textContent = uniqueIds.size;
 }
+
+async function loadPersonnel() {
+    try {
+        personnel = await api("/personnel?active=true");
+        restoreContent("#personnelCard"); // 🔥
+    } catch (err) {
+        console.error(err);
+        showError("#personnelCard", "Personel verileri alınamadı");
+        personnel = [];
+    }
+}
+
+async function loadTodayLogs() {
+    try {
+        todayLogs = await api("/nfc/today");
+        restoreContent("#scanCard"); // 🔥
+    } catch (err) {
+        console.error(err);
+        showError("#scanCard", "Kart okuma verileri alınamadı");
+        todayLogs = [];
+    }
+}
