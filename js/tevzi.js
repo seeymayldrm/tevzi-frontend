@@ -2,6 +2,7 @@ let assignmentsCache = [];
 let stationsCache = [];
 let scanList = [];
 let filteredScanList = [];
+let departmentsCache = [];
 
 let selectedPersonnelIds = new Set();
 let assignedPersonnelIds = new Set();
@@ -9,9 +10,8 @@ let assignedPersonnelIds = new Set();
 window.addEventListener("load", async () => {
 
     /* -----------------------------------------
-       0) ŞİRKET BİLGİLERİNİ SAYFAYA UYGULA
+       0) ŞİRKET BİLGİLERİ
     ------------------------------------------ */
-
     const cname = localStorage.getItem("companyName");
     const clogo = localStorage.getItem("companyLogo");
     const cfavicon = localStorage.getItem("companyFavicon");
@@ -26,18 +26,24 @@ window.addEventListener("load", async () => {
         document.getElementById("faviconTag").href = cfavicon;
 
     /* -----------------------------------------
-       SENİN ESKİ LOAD İŞLEMLERİN
+       DEFAULT SAATLER
     ------------------------------------------ */
     document.getElementById("startTime").value = "07:00";
     document.getElementById("endTime").value = "19:00";
 
     startClock();
+
+    // 🔥 SIRA ÖNEMLİ
+    await loadDepartments();
     await loadStations();
     await loadTodayAssignments();
     await loadScanList();
 
-    document.getElementById("filterName").addEventListener("input", applyFilters);
-    document.getElementById("filterDept").addEventListener("input", applyFilters);
+    document.getElementById("filterName")
+        .addEventListener("input", applyFilters);
+
+    document.getElementById("filterDept")
+        .addEventListener("change", applyFilters);
 });
 
 /* -----------------------------------------
@@ -62,6 +68,28 @@ function startClock() {
 }
 
 /* -----------------------------------------
+   DEPARTMANLAR (AKTİF)
+----------------------------------------- */
+async function loadDepartments() {
+    try {
+        const depts = await api("/departments?active=true");
+        departmentsCache = depts;
+
+        const select = document.getElementById("filterDept");
+        select.innerHTML = `<option value="">Tüm Departmanlar</option>`;
+
+        depts.forEach(d => {
+            const opt = document.createElement("option");
+            opt.value = d.id;
+            opt.textContent = d.name;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Departmanlar yüklenemedi", err);
+    }
+}
+
+/* -----------------------------------------
    1) BUGÜN KART OKUTANLAR
 ----------------------------------------- */
 async function loadScanList() {
@@ -73,6 +101,8 @@ async function loadScanList() {
         if (!logs.length) {
             tbody.innerHTML =
                 `<tr><td colspan="4" class="text-center py-2">Bugün kart okutan personel yok.</td></tr>`;
+            scanList = [];
+            filteredScanList = [];
             return;
         }
 
@@ -86,11 +116,10 @@ async function loadScanList() {
             );
 
             map.set(l.personnel.id, {
-                ...l.personnel,
-
-                // 🔥 FK → departman adı
+                id: l.personnel.id,
+                fullName: l.personnel.fullName,
+                departmentId: l.personnel.departmentRel?.id || null,
                 departmentName: l.personnel.departmentRel?.name || "-",
-
                 entryTime: entry ? entry.scannedAt.slice(11, 16) : "-"
             });
         });
@@ -104,22 +133,23 @@ async function loadScanList() {
 }
 
 /* -----------------------------------------
-   1.1) Filtreleme
+   1.1) FİLTRELEME
 ----------------------------------------- */
 function applyFilters() {
     const nameF = document.getElementById("filterName").value.toLowerCase();
-    const deptF = document.getElementById("filterDept").value.toLowerCase();
+    const deptId = document.getElementById("filterDept").value;
 
-    filteredScanList = scanList.filter(p =>
-        p.fullName.toLowerCase().includes(nameF) &&
-        (p.departmentName || "-").toLowerCase().includes(deptF)
-    );
+    filteredScanList = scanList.filter(p => {
+        const nameOk = p.fullName.toLowerCase().includes(nameF);
+        const deptOk = !deptId || String(p.departmentId) === deptId;
+        return nameOk && deptOk;
+    });
 
     renderScanTable();
 }
 
 /* -----------------------------------------
-   1.2) Tablo Render
+   1.2) TABLO RENDER
 ----------------------------------------- */
 function renderScanTable() {
     const tbody = document.getElementById("scanTableBody");
@@ -156,7 +186,7 @@ function renderScanTable() {
 }
 
 /* -----------------------------------------
-   1.3) Tekli seçim
+   1.3) TEKLİ SEÇİM
 ----------------------------------------- */
 function toggleSelect(id, checkbox) {
     checkbox.checked
@@ -165,7 +195,7 @@ function toggleSelect(id, checkbox) {
 }
 
 /* -----------------------------------------
-   1.4) Tümünü seç
+   1.4) TÜMÜNÜ SEÇ
 ----------------------------------------- */
 function selectAllFiltered() {
     filteredScanList.forEach(p => {
@@ -177,7 +207,7 @@ function selectAllFiltered() {
 }
 
 /* -----------------------------------------
-   1.5) Tümünü temizle
+   1.5) TÜMÜNÜ TEMİZLE
 ----------------------------------------- */
 function clearAllSelected() {
     selectedPersonnelIds.clear();
@@ -185,7 +215,7 @@ function clearAllSelected() {
 }
 
 /* -----------------------------------------
-   1.6) Header checkbox
+   1.6) HEADER CHECKBOX
 ----------------------------------------- */
 function toggleSelectAll(checkbox) {
     checkbox.checked ? selectAllFiltered() : clearAllSelected();
