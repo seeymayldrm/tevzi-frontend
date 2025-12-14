@@ -1,26 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
-    loadStations();
     loadDepartments();
+    loadStations();
 });
 
-/* =====================================================
-   STATION YÖNETİMİ
-===================================================== */
+/* ======================
+   STATION
+====================== */
 
-/* 1) İSTASYON LİSTELEME (aktifler) */
 async function loadStations() {
     const stations = await api("/stations?active=true");
-
     const tbody = document.getElementById("stationsTable");
     tbody.innerHTML = "";
 
-    stations.forEach(st => {
+    stations.forEach((st, i) => {
         tbody.innerHTML += `
             <tr>
-                <td>${st.id}</td>
+                <td>${i + 1}</td>
                 <td>${st.name}</td>
                 <td>${st.code}</td>
-                <td>${st.department || "-"}</td>
+                <td>${st.departmentRel?.name || "-"}</td>
                 <td>
                     <button class="btn btn-sm btn-warning"
                         onclick="openEdit(${st.id})">
@@ -36,130 +34,124 @@ async function loadStations() {
     });
 }
 
-/* 2) YENİ İSTASYON EKLEME */
 async function addStation() {
-    const name = document.getElementById("stName").value.trim();
-    const code = document.getElementById("stCode").value.trim();
-    const dept = document.getElementById("stDept").value;
+    const name = stName.value.trim();
+    const code = stCode.value.trim();
+    const departmentId = stDept.value || null;
 
     if (!name || !code) {
-        alert("Ad ve kod zorunlu.");
+        alert("Ad ve kod zorunlu");
         return;
     }
 
     await api("/stations", "POST", {
         name,
         code,
-        department: dept || null
+        departmentId: departmentId ? Number(departmentId) : null
     });
 
-    document.getElementById("stName").value = "";
-    document.getElementById("stCode").value = "";
-    document.getElementById("stDept").value = "";
+    stName.value = "";
+    stCode.value = "";
+    stDept.value = "";
 
     loadStations();
 }
 
-/* 3) İSTASYON SİLME (soft delete) */
-async function deleteStation(id) {
-    if (!confirm("Bu istasyonu silmek istediğine emin misin?")) return;
-
-    await api(`/stations/${id}`, "DELETE");
-    loadStations();
-}
-
-/* 4) DÜZENLEME MODALI */
 async function openEdit(id) {
     const stations = await api("/stations?active=true");
     const st = stations.find(s => s.id === id);
     if (!st) return;
 
-    document.getElementById("editId").value = st.id;
-    document.getElementById("editName").value = st.name;
-    document.getElementById("editCode").value = st.code;
-    document.getElementById("editDept").value = st.department || "";
+    editId.value = st.id;
+    editName.value = st.name;
+    editCode.value = st.code;
+    editDept.value = st.departmentId || "";
 
-    new bootstrap.Modal(
-        document.getElementById("editStationModal")
-    ).show();
+    new bootstrap.Modal(editStationModal).show();
 }
 
-/* 5) DÜZENLEME KAYDET */
 async function saveEdit() {
-    const id = document.getElementById("editId").value;
+    const id = editId.value;
 
     await api(`/stations/${id}`, "PUT", {
-        name: document.getElementById("editName").value.trim(),
-        code: document.getElementById("editCode").value.trim(),
-        department: document.getElementById("editDept").value.trim()
+        name: editName.value.trim(),
+        code: editCode.value.trim(),
+        departmentId: editDept.value || null
     });
 
     loadStations();
-    bootstrap.Modal
-        .getInstance(document.getElementById("editStationModal"))
-        .hide();
+    bootstrap.Modal.getInstance(editStationModal).hide();
 }
 
-/* =====================================================
-   DEPARTMENT YÖNETİMİ
-===================================================== */
+async function deleteStation(id) {
+    if (!confirm("Bu istasyon silinsin mi?")) return;
+    await api(`/stations/${id}`, "DELETE");
+    loadStations();
+}
 
-/* 6) DEPARTMAN LİSTELEME + DROPDOWN DOLDURMA */
+/* ======================
+   DEPARTMENT
+====================== */
+
 async function loadDepartments() {
-    const departments = await api("/departments?active=true");
+    const deps = await api("/departments");
 
-    /* TABLO */
     const tbody = document.getElementById("departmentsTable");
+    const stSelect = document.getElementById("stDept");
+    const editSelect = document.getElementById("editDept");
+
     tbody.innerHTML = "";
+    stSelect.innerHTML = `<option value="">Departman seç (opsiyonel)</option>`;
+    editSelect.innerHTML = `<option value="">Departman seç</option>`;
 
-    /* DROPDOWN */
-    const deptSelect = document.getElementById("stDept");
-    deptSelect.innerHTML = `<option value="">Departman seç (opsiyonel)</option>`;
-
-    departments.forEach(dep => {
-        // tablo
+    deps.forEach((d, i) => {
         tbody.innerHTML += `
             <tr>
-                <td>${dep.id}</td>
-                <td>${dep.name}</td>
-                <td>${dep.isActive ? "Aktif" : "Pasif"}</td>
+                <td>${i + 1}</td>
+                <td>${d.name}</td>
+                <td>${d.isActive ? "Aktif" : "Pasif"}</td>
                 <td>
+                    <button class="btn btn-sm btn-warning"
+                        onclick="editDepartment(${d.id}, '${d.name}')">
+                        Düzenle
+                    </button>
                     <button class="btn btn-sm btn-danger"
-                        onclick="deleteDepartment(${dep.id})">
+                        onclick="deleteDepartment(${d.id})">
                         Sil
                     </button>
                 </td>
             </tr>
         `;
 
-        // dropdown
-        deptSelect.innerHTML += `
-            <option value="${dep.name}">
-                ${dep.name}
-            </option>
-        `;
+        if (d.isActive) {
+            stSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            editSelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+        }
     });
 }
 
-/* 7) YENİ DEPARTMAN EKLEME */
 async function addDepartment() {
-    const name = document.getElementById("depName").value.trim();
-
-    if (!name) {
-        alert("Departman adı zorunlu.");
-        return;
-    }
+    const name = depName.value.trim();
+    if (!name) return alert("Departman adı zorunlu");
 
     await api("/departments", "POST", { name });
-
-    document.getElementById("depName").value = "";
+    depName.value = "";
     loadDepartments();
 }
 
-/* 8) DEPARTMAN SİLME (soft delete) */
-async function deleteDepartment(id) {
-    if (!confirm("Bu departman pasif yapılsın mı?")) return;
+async function editDepartment(id, currentName) {
+    const newName = prompt("Yeni departman adı", currentName);
+    if (!newName) return;
 
+    await api(`/departments/${id}`, "PUT", {
+        name: newName.trim()
+    });
+
+    loadDepartments();
+}
+
+async function deleteDepartment(id) {
+    if (!confirm("Departman pasif yapılsın mı?")) return;
     await api(`/departments/${id}`, "DELETE");
     loadDepartments();
 }
