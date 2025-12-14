@@ -1,6 +1,9 @@
 let editModal;
 let departmentsCache = [];
 
+/* =====================================================
+   PAGE INIT
+===================================================== */
 window.addEventListener("load", async () => {
     editModal = new bootstrap.Modal(document.getElementById("editModal"));
 
@@ -8,8 +11,7 @@ window.addEventListener("load", async () => {
 
     try {
         await loadDepartments();
-        await loadPersonnel();
-        restoreContent("#personnelCard");
+        await loadPersonnel(true); // 👈 ilk yükleme
         showToast("Personel listesi yüklendi", "success");
     } catch (err) {
         console.error(err);
@@ -17,9 +19,9 @@ window.addEventListener("load", async () => {
     }
 });
 
-/* =========================
+/* =====================================================
    DEPARTMANLAR
-========================= */
+===================================================== */
 async function loadDepartments() {
     try {
         const departments = await api("/departments?active=true");
@@ -28,38 +30,54 @@ async function loadDepartments() {
         const filter = document.getElementById("filterDept");
         const edit = document.getElementById("editDept");
 
-        filter.innerHTML = `<option value="">Tümü</option>`;
-        edit.innerHTML = `<option value="">Seçiniz</option>`;
+        if (filter) {
+            filter.innerHTML = `<option value="">Tümü</option>`;
+            departments.forEach(d => {
+                filter.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            });
+        }
 
-        departments.forEach(d => {
-            filter.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-            edit.innerHTML += `<option value="${d.id}">${d.name}</option>`;
-        });
-    } catch {
+        if (edit) {
+            edit.innerHTML = `<option value="">Seçiniz</option>`;
+            departments.forEach(d => {
+                edit.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            });
+        }
+    } catch (err) {
+        console.error(err);
         showToast("Departmanlar yüklenemedi", "danger");
     }
 }
 
-/* =========================
-   PERSONEL
-========================= */
-async function loadPersonnel() {
-    showLoading("#personnelCard", "Filtreleniyor...");
+/* =====================================================
+   PERSONEL LİSTELEME
+   isInitial = true → sayfa ilk açılışı
+===================================================== */
+async function loadPersonnel(isInitial = false) {
+    if (!isInitial) {
+        showLoading("#personnelCard", "Filtreleniyor...");
+    }
 
     try {
-        const name = document.getElementById("filterName").value.toLowerCase();
-        const deptId = document.getElementById("filterDept").value;
+        const name =
+            document.getElementById("filterName")?.value.toLowerCase() || "";
+        const deptId =
+            document.getElementById("filterDept")?.value || "";
 
         const data = await api("/personnel?active=true");
+
+        // 🔥 DOM’U GERİ GETİR
+        restoreContent("#personnelCard");
+
         const tbody = document.getElementById("personnelTable");
+        if (!tbody) return;
+
         tbody.innerHTML = "";
 
-        const filtered = data.filter(p => {
-            return (
-                p.fullName.toLowerCase().includes(name) &&
-                (!deptId || String(p.departmentId) === deptId)
-            );
-        });
+        const filtered = data.filter(p =>
+            p.fullName.toLowerCase().includes(name) &&
+            (!deptId || String(p.departmentId) === String(deptId))
+        );
 
         if (filtered.length === 0) {
             tbody.innerHTML = `
@@ -67,8 +85,8 @@ async function loadPersonnel() {
                     <td colspan="6" class="text-center text-muted py-4">
                         Kayıt bulunamadı
                     </td>
-                </tr>`;
-            restoreContent("#personnelCard");
+                </tr>
+            `;
             return;
         }
 
@@ -80,10 +98,20 @@ async function loadPersonnel() {
                     <td>${p.fullName}</td>
                     <td>${p.departmentRel?.name || "-"}</td>
                     <td>${p.title || "-"}</td>
-                    <td>${card ? `<span class="badge bg-primary">${card.uid}</span>` : "Kart Yok"}</td>
                     <td>
+                        ${card
+                    ? `<span class="badge bg-primary">${card.uid}</span>`
+                    : "Kart Yok"
+                }
+                    </td>
+                    <td style="white-space: nowrap;">
                         <button class="btn btn-sm btn-warning me-1"
-                            onclick="openEditModal(${p.id}, '${p.fullName.replace(/'/g, "\\'")}', '${p.departmentId || ""}', '${p.title || ""}')">
+                            onclick="openEditModal(
+                                ${p.id},
+                                '${p.fullName.replace(/'/g, "\\'")}',
+                                '${p.departmentId || ""}',
+                                '${p.title || ""}'
+                            )">
                             Düzenle
                         </button>
                         <button class="btn btn-sm btn-danger"
@@ -91,19 +119,19 @@ async function loadPersonnel() {
                             Sil
                         </button>
                     </td>
-                </tr>`;
+                </tr>
+            `;
         });
 
-        restoreContent("#personnelCard");
     } catch (err) {
         console.error(err);
         showError("#personnelCard", "Personel listesi alınamadı");
     }
 }
 
-/* =========================
-   MODAL / CRUD
-========================= */
+/* =====================================================
+   MODAL
+===================================================== */
 function openEditModal(id, name, dept, title) {
     editId.value = id;
     editName.value = name;
@@ -112,28 +140,39 @@ function openEditModal(id, name, dept, title) {
     editModal.show();
 }
 
+/* =====================================================
+   KAYDET
+===================================================== */
 async function saveEdit() {
     try {
         await api(`/personnel/${editId.value}`, "PUT", {
-            fullName: editName.value,
+            fullName: editName.value.trim(),
             departmentId: editDept.value || null,
-            title: editTitle.value
+            title: editTitle.value.trim()
         });
+
         editModal.hide();
         showToast("Personel güncellendi", "success");
         loadPersonnel();
-    } catch {
+
+    } catch (err) {
+        console.error(err);
         showToast("Güncelleme başarısız", "danger");
     }
 }
 
+/* =====================================================
+   SİL
+===================================================== */
 async function deletePersonnel(id) {
     if (!confirm("Bu personel silinsin mi?")) return;
+
     try {
         await api(`/personnel/${id}`, "DELETE");
         showToast("Personel silindi", "warning");
         loadPersonnel();
-    } catch {
+    } catch (err) {
+        console.error(err);
         showToast("Silme işlemi başarısız", "danger");
     }
 }
