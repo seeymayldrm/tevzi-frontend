@@ -1,5 +1,5 @@
 async function loadSidebar(activePage) {
-    const container = document.getElementById("sidebarContainer");
+    const container = document.getElementById("sidebar-container");
     if (!container) return;
 
     try {
