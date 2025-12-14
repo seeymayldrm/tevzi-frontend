@@ -5,13 +5,27 @@ let todayLogs = [];
 document.addEventListener("DOMContentLoaded", async () => {
     startClock();
 
-    departments = await api("/departments?active=true");
-    personnel = await api("/personnel?active=true");
-    todayLogs = await api("/nfc/today");
+    showLoading("#personnelCard", "Personel bilgileri yükleniyor...");
+    showLoading("#scanCard", "Bugünkü kart okumalar alınıyor...");
 
-    fillDepartmentDropdowns();
-    updatePersonnelCount();
-    updateScanCount();
+    try {
+        [departments, personnel, todayLogs] = await Promise.all([
+            api("/departments?active=true"),
+            api("/personnel?active=true"),
+            api("/nfc/today")
+        ]);
+
+        fillDepartmentDropdowns();
+        updatePersonnelCount();
+        updateScanCount();
+
+        showToast("Dashboard yüklendi", "success");
+    }
+    catch (err) {
+        console.error(err);
+        showError("#personnelCard", "Personel verileri alınamadı");
+        showError("#scanCard", "Kart okuma verileri alınamadı");
+    }
 });
 
 /* ======================
@@ -51,8 +65,7 @@ function fillDepartmentDropdowns() {
    PERSONNEL COUNT
 ====================== */
 function updatePersonnelCount() {
-    const deptId = document
-        .getElementById("personnelDeptFilter").value;
+    const deptId = document.getElementById("personnelDeptFilter").value;
 
     const filtered = deptId
         ? personnel.filter(p => p.departmentId == deptId)
@@ -66,16 +79,12 @@ function updatePersonnelCount() {
    TODAY SCAN COUNT
 ====================== */
 function updateScanCount() {
-    const deptId = document
-        .getElementById("scanDeptFilter").value;
-
+    const deptId = document.getElementById("scanDeptFilter").value;
     const uniqueIds = new Set();
 
     todayLogs.forEach(log => {
         if (!log.personnel) return;
-
         if (log.type !== "IN") return;
-
         if (deptId && log.personnel.departmentId != deptId) return;
 
         uniqueIds.add(log.personnel.id);
