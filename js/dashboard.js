@@ -8,24 +8,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     showLoading("#personnelCard", "Personel bilgileri yükleniyor...");
     showLoading("#scanCard", "Bugünkü kart okumalar alınıyor...");
 
-    try {
-        [departments, personnel, todayLogs] = await Promise.all([
-            api("/departments?active=true"),
-            api("/personnel?active=true"),
-            api("/nfc/today")
-        ]);
+    await loadDepartments();
+    await loadPersonnel();
+    await loadTodayLogs();
 
-        fillDepartmentDropdowns();
-        updatePersonnelCount();
-        updateScanCount();
+    fillDepartmentDropdowns();
+    updatePersonnelCount();
+    updateScanCount();
 
-        showToast("Dashboard yüklendi", "success");
-    }
-    catch (err) {
-        console.error(err);
-        showError("#personnelCard", "Personel verileri alınamadı");
-        showError("#scanCard", "Kart okuma verileri alınamadı");
-    }
+    showToast("Dashboard hazır", "success");
 });
 
 /* ======================
@@ -42,6 +33,38 @@ function startClock() {
                 minute: "2-digit"
             });
     }, 1000);
+}
+
+/* ======================
+   DATA LOADERS (SAFE)
+====================== */
+async function loadDepartments() {
+    try {
+        departments = await api("/departments?active=true");
+    } catch (err) {
+        console.error("Departmanlar alınamadı", err);
+        departments = [];
+    }
+}
+
+async function loadPersonnel() {
+    try {
+        personnel = await api("/personnel?active=true");
+    } catch (err) {
+        console.error("Personel alınamadı", err);
+        showError("#personnelCard", "Personel verileri alınamadı");
+        personnel = [];
+    }
+}
+
+async function loadTodayLogs() {
+    try {
+        todayLogs = await api("/nfc/today");
+    } catch (err) {
+        console.error("Kart okuma alınamadı", err);
+        showError("#scanCard", "Kart okuma verileri alınamadı");
+        todayLogs = [];
+    }
 }
 
 /* ======================
@@ -68,13 +91,14 @@ function fillDepartmentDropdowns() {
 ====================== */
 function updatePersonnelCount() {
     const deptId = document.getElementById("personnelDeptFilter")?.value;
+    const el = document.getElementById("totalPersonnelCount");
+    if (!el) return;
 
     const filtered = deptId
         ? personnel.filter(p => p.departmentId == deptId)
         : personnel;
 
-    document.getElementById("totalPersonnelCount").textContent =
-        filtered.length;
+    el.textContent = filtered.length;
 }
 
 /* ======================
@@ -82,6 +106,9 @@ function updatePersonnelCount() {
 ====================== */
 function updateScanCount() {
     const deptId = document.getElementById("scanDeptFilter")?.value;
+    const el = document.getElementById("todayScanCount");
+    if (!el) return;
+
     const uniqueIds = new Set();
 
     todayLogs.forEach(log => {
@@ -92,6 +119,5 @@ function updateScanCount() {
         uniqueIds.add(log.personnel.id);
     });
 
-    document.getElementById("todayScanCount").textContent =
-        uniqueIds.size;
+    el.textContent = uniqueIds.size;
 }
