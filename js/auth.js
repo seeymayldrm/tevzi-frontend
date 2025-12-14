@@ -23,13 +23,12 @@ async function login() {
         localStorage.setItem("companyId", data.user.companyId);
         localStorage.setItem("username", data.user.username);
 
-        // ⭐ COMPANY INFO KAYDET (jenerik)
+        // ⭐ COMPANY INFO
         if (data.user.company) {
             localStorage.setItem("companyName", data.user.company.name || "");
             localStorage.setItem("companyLogo", data.user.company.logoUrl || "");
             localStorage.setItem("companyFavicon", data.user.company.faviconUrl || "");
         } else {
-            // SUPERADMIN login olduysa şirketi yok
             localStorage.setItem("companyName", "");
             localStorage.setItem("companyLogo", "");
             localStorage.setItem("companyFavicon", "");
@@ -38,12 +37,9 @@ async function login() {
         // ⭐ ROLE GÖRE YÖNLENDİRME ⭐
         if (data.user.role === "SUPERADMIN") {
             window.location.href = "superadmin.html";
-        }
-        else if (data.user.role === "ADMIN") {
-            window.location.href = "tevzi.html";
-        }
-        else {
-            window.location.href = "tevzi.html";
+        } else {
+            // ADMIN + SUPERVISOR
+            window.location.href = "dashboard.html";
         }
 
     } catch (err) {
