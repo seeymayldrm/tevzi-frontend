@@ -51,6 +51,8 @@ function fillDepartmentDropdowns() {
     const pSelect = document.getElementById("personnelDeptFilter");
     const sSelect = document.getElementById("scanDeptFilter");
 
+    if (!pSelect || !sSelect) return;
+
     pSelect.innerHTML = `<option value="">Tüm Departmanlar</option>`;
     sSelect.innerHTML = `<option value="">Tüm Departmanlar</option>`;
 
@@ -65,7 +67,7 @@ function fillDepartmentDropdowns() {
    PERSONNEL COUNT
 ====================== */
 function updatePersonnelCount() {
-    const deptId = document.getElementById("personnelDeptFilter").value;
+    const deptId = document.getElementById("personnelDeptFilter")?.value;
 
     const filtered = deptId
         ? personnel.filter(p => p.departmentId == deptId)
@@ -79,7 +81,7 @@ function updatePersonnelCount() {
    TODAY SCAN COUNT
 ====================== */
 function updateScanCount() {
-    const deptId = document.getElementById("scanDeptFilter").value;
+    const deptId = document.getElementById("scanDeptFilter")?.value;
     const uniqueIds = new Set();
 
     todayLogs.forEach(log => {
