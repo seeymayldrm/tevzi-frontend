@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Ayarlar | Tevzi Panel</title>
+
+    <!-- 🔥 Dinamik favicon -->
     <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -11,32 +13,23 @@
 </head>
 
 <body>
+
+    <!-- MOBİL MENU -->
     <button class="menu-toggle d-md-none" onclick="toggleMenu()">☰</button>
 
     <div class="d-flex">
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-logo">
-                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
-                <img id="companyLogo" src="assets/logo.png" alt="Logo">
-            </div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="tevzi.html">İş Atama</a>
-            <a href="timeline.html">Zaman Çizelgesi</a>
-            <a href="nfc-logs.html">NFC Logları</a>
-            <a href="personnel.html">Personel Yönetimi</a>
-            <a href="card-management.html">Kart Yönetimi</a>
-
-            <div class="sidebar-title">Yönetim</div>
-            <a href="settings.html" class="active">Ayarlar</a>
-        </div>
+        <!-- 🔥 SIDEBAR (DINAMIK) -->
+        <div id="sidebar-container"></div>
 
         <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold mb-0">Ayarlar</h3>
-                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Çıkış Yap</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                    Çıkış Yap
+                </button>
             </div>
 
             <div class="row g-4">
@@ -136,7 +129,11 @@
         </div>
     </div>
 
-    <!-- İSTASYON DÜZENLE MODAL -->
+    <!-- =====================
+         MODALLAR
+    ====================== -->
+
+    <!-- İSTASYON DÜZENLE -->
     <div class="modal fade" id="editStationModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -160,15 +157,19 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                    <button class="btn btn-primary" onclick="saveEdit()">Kaydet</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        Kapat
+                    </button>
+                    <button class="btn btn-primary" onclick="saveEdit()">
+                        Kaydet
+                    </button>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <!-- DEPARTMAN DÜZENLE MODAL -->
+    <!-- DEPARTMAN DÜZENLE -->
     <div class="modal fade" id="editDepartmentModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -180,25 +181,38 @@
 
                 <div class="modal-body">
                     <input type="hidden" id="editDepId">
-
                     <label>Departman Adı</label>
                     <input id="editDepName" class="form-control">
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                    <button class="btn btn-primary" onclick="saveDepartmentEdit()">Kaydet</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        Kapat
+                    </button>
+                    <button class="btn btn-primary" onclick="saveDepartmentEdit()">
+                        Kaydet
+                    </button>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/api.js"></script>
+    <!-- =====================
+         SCRIPTS
+    ====================== -->
     <script src="js/app.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/company-branding.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 🔥 AKTIF SIDEBAR -->
+    <script>
+        loadSidebar("settings");
+    </script>
+
 </body>
 
 </html>

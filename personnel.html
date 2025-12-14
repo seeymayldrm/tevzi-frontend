@@ -4,35 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <title>Personel Yönetimi | Tevzi Panel</title>
+
+    <!-- 🔥 Dinamik favicon -->
     <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
+
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
+
+    <!-- MOBİL MENU -->
     <button class="menu-toggle d-md-none" onclick="toggleMenu()">☰</button>
 
     <div class="d-flex">
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-logo">
-                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
-                <img id="companyLogo" src="assets/logo.png" alt="Logo">
-            </div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="tevzi.html">İş Atama</a>
-            <a href="timeline.html">Zaman Çizelgesi</a>
-            <a href="nfc-logs.html">NFC Logları</a>
-            <a href="personnel.html" class="active">Personel Yönetimi</a>
-            <a href="card-management.html">Kart Yönetimi</a>
-
-            <div class="sidebar-title">Yönetim</div>
-            <a href="settings.html">Ayarlar</a>
-        </div>
+        <!-- 🔥 SIDEBAR (DINAMIK) -->
+        <div id="sidebar-container"></div>
 
         <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
+
             <h3 class="fw-bold mb-4">Personel Yönetimi</h3>
 
             <!-- FİLTRE -->
@@ -56,7 +48,10 @@
 
             <!-- TABLO -->
             <div class="card" id="personnelCard">
-                <div class="card-header fw-bold">Personel Listesi</div>
+                <div class="card-header fw-bold">
+                    Personel Listesi
+                </div>
+
                 <div class="card-body p-0">
                     <div data-ui-slot>
                         <table class="table table-striped m-0">
@@ -75,40 +70,64 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- MODAL -->
+    <!-- =====================
+         MODAL
+    ====================== -->
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
+
                 <div class="modal-header">
                     <h5 class="modal-title">Personel Düzenle</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body">
                     <input type="hidden" id="editId">
-                    <label>Ad Soyad</label>
+
+                    <label class="form-label">Ad Soyad</label>
                     <input id="editName" class="form-control mb-2">
-                    <label>Bölüm</label>
+
+                    <label class="form-label">Bölüm</label>
                     <select id="editDept" class="form-select mb-2"></select>
-                    <label>Ünvan</label>
+
+                    <label class="form-label">Ünvan</label>
                     <input id="editTitle" class="form-control mb-2">
                 </div>
+
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                    <button class="btn btn-primary" onclick="saveEdit()">Kaydet</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        Kapat
+                    </button>
+                    <button class="btn btn-primary" onclick="saveEdit()">
+                        Kaydet
+                    </button>
                 </div>
+
             </div>
         </div>
     </div>
 
+    <!-- =====================
+         SCRIPTS
+    ====================== -->
     <script src="js/app.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/layout.js"></script>
     <script src="js/personnel.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/company-branding.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 🔥 AKTIF SIDEBAR -->
+    <script>
+        loadSidebar("personnel");
+    </script>
+
 </body>
 
 </html>

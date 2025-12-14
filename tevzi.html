@@ -3,8 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Tevzi İş Atama Paneli</title>
+    <title>Tevzi İş Atama | Tevzi Panel</title>
 
+    <!-- Dinamik favicon -->
     <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -12,28 +13,16 @@
 </head>
 
 <body>
+
+    <!-- Mobil Menü -->
     <button class="menu-toggle d-md-none" onclick="toggleMenu()">☰</button>
 
     <div class="d-flex">
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-logo">
-                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
-                <img id="companyLogo" src="assets/logo.png" alt="Logo">
-            </div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="tevzi.html" class="active">İş Atama</a>
-            <a href="timeline.html">Zaman Çizelgesi</a>
-            <a href="nfc-logs.html">NFC Logları</a>
-            <a href="personnel.html">Personel Yönetimi</a>
-            <a href="card-management.html">Kart Yönetimi</a>
+        <!-- 🔥 SIDEBAR (DİNAMİK) -->
+        <div id="sidebar-container"></div>
 
-            <div class="sidebar-title">Yönetim</div>
-            <a href="settings.html">Ayarlar</a>
-        </div>
-
-        <!-- MAIN -->
+        <!-- MAIN CONTENT -->
         <div class="content flex-grow-1 p-4">
 
             <div class="d-flex justify-content-between mb-2">
@@ -43,32 +32,37 @@
 
             <div class="row">
 
-                <!-- SOL -->
+                <!-- SOL PANEL -->
                 <div class="col-md-4">
                     <div class="card mb-4">
-                        <div class="card-header fw-bold">Kart Okutan Personeller</div>
+                        <div class="card-header fw-bold">
+                            Kart Okutan Personeller
+                        </div>
 
                         <div class="p-3">
                             <input id="filterName" class="form-control mb-2" placeholder="Ada göre filtrele">
 
-                            <!-- 🔥 DROPDOWN -->
                             <select id="filterDept" class="form-select mb-2">
                                 <option value="">Tüm Departmanlar</option>
                             </select>
 
                             <div class="d-flex gap-2 mb-2">
-                                <button class="btn btn-sm btn-outline-primary w-50" onclick="selectAllFiltered()">Tümünü
-                                    Seç</button>
-                                <button class="btn btn-sm btn-outline-secondary w-50"
-                                    onclick="clearAllSelected()">Temizle</button>
+                                <button class="btn btn-sm btn-outline-primary w-50" onclick="selectAllFiltered()">
+                                    Tümünü Seç
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary w-50" onclick="clearAllSelected()">
+                                    Temizle
+                                </button>
                             </div>
                         </div>
 
-                        <div class="card-body" style="max-height:600px;overflow-y:auto;padding:0">
+                        <div class="card-body p-0" style="max-height:600px;overflow-y:auto;">
                             <table class="table table-sm mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th width="30"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+                                        <th width="30">
+                                            <input type="checkbox" onclick="toggleSelectAll(this)">
+                                        </th>
                                         <th>Ad Soyad</th>
                                         <th>Departman</th>
                                         <th>Giriş</th>
@@ -80,31 +74,43 @@
                     </div>
                 </div>
 
-                <!-- SAĞ -->
+                <!-- SAĞ PANEL -->
                 <div class="col-md-8">
+
                     <div class="card mb-4">
-                        <div class="card-header fw-bold">Tevzi İş Atama</div>
+                        <div class="card-header fw-bold">
+                            Tevzi İş Atama
+                        </div>
+
                         <div class="card-body row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Proje / İstasyon</label>
                                 <select id="stationSelect" class="form-select"></select>
                             </div>
+
                             <div class="col-md-3">
                                 <label class="form-label">Başlangıç</label>
                                 <input id="startTime" type="time" class="form-control">
                             </div>
+
                             <div class="col-md-3">
                                 <label class="form-label">Bitiş</label>
                                 <input id="endTime" type="time" class="form-control">
                             </div>
+
                             <div class="col-md-12 d-grid">
-                                <button class="btn btn-primary" onclick="assignJob()">İş Ata</button>
+                                <button class="btn btn-primary" onclick="assignJob()">
+                                    İş Ata
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="card-header fw-bold">Bugünkü İş Atamaları</div>
+                        <div class="card-header fw-bold">
+                            Bugünkü İş Atamaları
+                        </div>
+
                         <div class="card-body p-0">
                             <table class="table table-striped m-0">
                                 <thead>
@@ -120,16 +126,27 @@
                             </table>
                         </div>
                     </div>
+
                 </div>
 
             </div>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
+    <!-- SCRIPTS -->
     <script src="js/app.js"></script>
+    <script src="js/api.js"></script>
+
+    <!-- 🔥 Layout & Sidebar -->
+    <script src="js/layout.js"></script>
+
+    <!-- Sayfaya özel -->
     <script src="js/tevzi.js"></script>
     <script src="js/company-branding.js"></script>
+    <script>
+        loadSidebar("tevzi");
+    </script>
+
 </body>
 
 </html>
