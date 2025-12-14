@@ -3,18 +3,33 @@ async function loadSidebar(activePage) {
     if (!container) return;
 
     try {
-        const res = await fetch("partials/sidebar.html");
-        const html = await res.text();
-        container.innerHTML = html;
+        let sidebarHtml = sessionStorage.getItem("sidebarHtml");
 
-        // ACTIVE LINK
+        // 🔥 İlk kez ise fetch
+        if (!sidebarHtml) {
+            const res = await fetch("partials/sidebar.html");
+            if (!res.ok) throw new Error("Sidebar yüklenemedi");
+            sidebarHtml = await res.text();
+            sessionStorage.setItem("sidebarHtml", sidebarHtml);
+        }
+
+        // 🔥 DOM'a bas
+        container.innerHTML = sidebarHtml;
+
+        // 🔥 Aktif menü
         container.querySelectorAll("a[data-page]").forEach(link => {
-            if (link.dataset.page === activePage) {
-                link.classList.add("active");
-            }
+            link.classList.toggle(
+                "active",
+                link.dataset.page === activePage
+            );
         });
 
     } catch (err) {
         console.error("Sidebar yüklenemedi:", err);
+        container.innerHTML = `
+            <div class="p-3 text-danger">
+                Menü yüklenemedi
+            </div>
+        `;
     }
 }
