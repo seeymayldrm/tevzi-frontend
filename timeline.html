@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <title>Zaman Çizelgesi | Tevzi Panel</title>
 
-    <!-- 🔥 Dinamik favicon -->
+    <!-- Dinamik favicon -->
     <link id="faviconTag" rel="icon" type="image/png" href="favicon.png">
-
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
@@ -18,22 +17,8 @@
 
     <div class="d-flex">
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-logo">
-                <div id="companyName" class="fw-bold fs-5">Şirket Adı</div>
-                <img id="companyLogo" src="assets/logo.png" alt="Logo">
-            </div>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="tevzi.html">İş Atama</a>
-            <a href="timeline.html" class="active">Zaman Çizelgesi</a>
-            <a href="nfc-logs.html">NFC Logları</a>
-            <a href="personnel.html">Personel Yönetimi</a>
-            <a href="card-management.html">Kart Yönetimi</a>
-
-            <div class="sidebar-title">Yönetim</div>
-            <a href="settings.html">Ayarlar</a>
-        </div>
+        <!-- 🔥 SIDEBAR BURAYA YÜKLENECEK -->
+        <div id="sidebarContainer"></div>
 
         <!-- CONTENT -->
         <div class="content flex-grow-1 p-4">
@@ -65,7 +50,9 @@
                     </div>
 
                     <div class="col-md-3">
-                        <button class="btn btn-primary w-100" onclick="loadTimeline()">Listele</button>
+                        <button class="btn btn-primary w-100" onclick="loadTimeline()">
+                            Listele
+                        </button>
                     </div>
 
                     <div class="col-md-12 text-md-end mt-2">
@@ -99,13 +86,16 @@
         </div>
     </div>
 
-
-
+    <!-- SCRIPTS -->
     <script src="js/app.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
     <script src="js/timeline.js"></script>
     <script src="js/company-branding.js"></script>
 
+    <script>
+        loadSidebar("timeline");
+    </script>
 
 </body>
 
